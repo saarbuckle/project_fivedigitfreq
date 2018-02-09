@@ -22,12 +22,6 @@ function varargout=fivedigitFreq3_imana(what,varargin)
 %
 % IMPORTANT NOTES:
 %   With every new subject, you must update variables in 'Subject Things'.
-%   
-%   Some functions require functions made by SArbuckle. They can be
-%      pulled from his github ((https://github.com/saarbuckle/SA_function_library)). 
-%      Specifically:
-%           'splitmath'
-%           'uniquePairs'
 %
 %      'dircheck' is a local function that creates a new directories so it
 %      can save appropriate datafile structures. 
@@ -37,7 +31,7 @@ function varargout=fivedigitFreq3_imana(what,varargin)
 %      lab website).
 
 
-% Spencer Arbuckle, Olivia Stanely, Joern Diedrichsen, UWO, 2017
+% Spencer Arbuckle, Atsushi Yokoi, Joern Diedrichsen, UWO, 2017
 % saarbuckle@gmail.com
 
 
@@ -45,7 +39,7 @@ function varargout=fivedigitFreq3_imana(what,varargin)
 fdf2BaseDir     ='/Users/sarbuckle/Documents/MotorControl/data/FingerPattern/fivedigitFreq2';
 
 baseDir         ='/Users/sarbuckle/Documents/MotorControl/data/FingerPattern/fivedigitFreq3';
-codeDir         ='/Users/sarbuckle/Dropbox (Diedrichsenlab)/Arbuckle_code/projects/FingerPattern';
+codeDir         ='/Users/sarbuckle/Dropbox (Diedrichsenlab)/Arbuckle_code/projects/project_fivedigitfreq';
 behavDir        =[baseDir '/data'];                       %dircheck(behavDir);
 imagingDir      =[baseDir '/imaging_data'];               %dircheck(imagingDir);
 imagingDirRaw   =[baseDir '/imaging_data_raw'];           %dircheck(imagingDirRaw);
