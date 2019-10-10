@@ -38,7 +38,8 @@ function varargout=fivedigitFreq3_imana(what,varargin)
 % ------------------------- Directories -----------------------------------
 fdf2BaseDir     ='/Users/sarbuckle/Documents/MotorControl/data/FingerPattern/fivedigitFreq2';
 
-baseDir         ='/Users/sarbuckle/Documents/MotorControl/data/FingerPattern/fivedigitFreq3';
+baseDir         ='/Users/sarbuckle/DATA/FingerPattern/fivedigitFreq3'; 
+%codeDir ='C:\Users\saarb\Dropbox (Diedrichsenlab)\Arbuckle_code\projects\project_fivedigitfreq';
 codeDir         ='/Users/sarbuckle/Dropbox (Diedrichsenlab)/Arbuckle_code/projects/project_fivedigitfreq';
 behavDir        =[baseDir '/data'];                       %dircheck(behavDir);
 imagingDir      =[baseDir '/imaging_data'];               %dircheck(imagingDir);
@@ -72,7 +73,7 @@ run        = {'1','2','3','4','5','6','7','8'};
 
 % ------------------------- ROI things ------------------------------------
 hem        = {'lh','rh'};                                                   % short-hand hemisphere strings for folder names/prefixes
-regname    = {'sS1','sM1','sSMA','sMT','sV1','sV2','Ba1','Ba2','B3a','B3b',...
+regname    = {'sS1','sM1','sSMA','sMT','sV1','sV1/V2','Ba1','Ba2','B3a','B3b',...
               'oS1','oM1','oPMd','oPMv','oSMA','oV12','oSPLa','oSPLp'};     % s-prefix identifies that ROIs are "spencer" rois, o-prefix are rois from probabalistic atlases
 regSide    = [ones(size(regname)),...                                       % 1 = left hemi (contra)
                 ones(size(regname)).*2];                                    % 2 = right hemi (ipsi)
@@ -80,11 +81,11 @@ regType    = [1:length(regname),...                                         % ro
                 1:length(regname)];
 numregions = max(regType);                                                  % total number of regions 
 % title of regions ordered according to numerical call id (eg. 2 = Lh M1)
-reg_title  = {'Lh sS1','Lh sM1','Lh sSMA','Lh sMT','Lh sV1','Lh sV2',...    %1:6
-              'Lh Ba1','Lh Ba2','Lh B3a','Lh B3b',...                       %7:10
+reg_title  = {'Lh sS1','Lh sM1','Lh sSMA','Lh sMT','Lh sV1','Lh sV1/V2',...     %1:6
+              'Lh Ba1','Lh Ba2','Lh B3a','Lh B3b',...                           %7:10
               'Lh oS1','Lh oM1','Lh oPMd','Lh oPMv','Lh oSMA','Lh oV12','Lh oSPLa','Lh oSPLp',...   %11:18
-              'Rh sS1','Rh sM1','Rh sSMA','Rh sMT','Rh sV1','Rh sV2',...    %19:24
-              'Rh Ba1','Rh Ba2','Rh B3a','Rh B3b',...                       %25:28
+              'Rh sS1','Rh sM1','Rh sSMA','Rh sMT','Rh sV1','Rh sV1/V2',...     %19:24
+              'Rh Ba1','Rh Ba2','Rh B3a','Rh B3b',...                           %25:28
               'Rh oS1','Rh oM1','Rh oPMd','Rh oPMv','Rh oSMA','Rh oV12','Rh oSPLa','Rh oSPLp'}; %29:36
 
 % ------------------------- Freesurfer things -----------------------------         
@@ -237,17 +238,18 @@ switch(what)
             subplot(2,length(run),b);
             d = getrow(D,D.BN==b);
             %subplot(2,1,1); plot(D.realStartTime/1000,(D.realStartTR-1)*0.7+D.realStartTRTime/1000)
-            plot(d.realStartTime/1000,(d.realStartTR-1)*(TR_length) + d.realStartTRTime/1000,'LineWidth',0.25,'Marker','o','Color','k')
+            plot(d.realStartTime/1000,(d.realStartTR-1)*(TR_length) + d.realStartTRTime/1000,'LineWidth',1.5,'Color','k')
             title(sprintf('run %s',run{b}));
             xlabel('trial start time (s)');
             ylabel('tr start time (s)');
             grid on
+            axis equal
         end
         
         % plot difference of TR time and trial onset time
         subplot(2,length(run),[length(run)+1 : length(run)*2]); 
-        plot((D.realStartTime/1000-(D.realStartTR-1)*TR_length + D.realStartTRTime/1000),'LineWidth',1.5,'Color','k')
-        ylabel('trial onset - tr time (ms)');
+        plot(D.realStartTime/1000 - ((D.realStartTR-1)*TR_length + D.realStartTRTime/1000),'LineWidth',1.5,'Color','k')
+        ylabel('trial onset - tr time (s)');
         xlabel('trial number');
         title('Difference of Trial onset time and TR time')
         xlim([0 length(run)*40]);
@@ -263,6 +265,10 @@ switch(what)
         glm = 3;
         load(fullfile(glmDir{glm},sprintf('s%02d',sn),'SPM.mat'));
         spm_rwls_resstats(SPM)       
+    case 'MISC_checkDesignMatrix'
+        vararginoptions(varargin,{'sn','glm'});
+        load(fullfile(glmDir{glm},subj_name{sn},'SPM.mat'));
+        imagesc(SPM.xX.X,[0 0.1]);
     case 'BEHA_getBehaviour'                                                % Harvest figner force data from fingerbox force traces
         % harvest pressing force data for each trial
         sn       = [10:13];
@@ -367,11 +373,13 @@ switch(what)
         drawline(0);
         %__________________________________________________________________    
     case 'scatterplotMDS'
+        linewidth = 1;
+        
         color           = {[0 0 0] [0.5 0 0] [0.9 0 0] [1 0.6 0]};
         CAT.markercolor = color;
         CAT.markerfill  = color;
         CAT.markertype  = 'o';
-        CAT.markersize  = 7;
+        CAT.markersize  = 6;
         
         Y     = varargin{1};
         speed = varargin{2};
@@ -379,7 +387,7 @@ switch(what)
         lines = varargin{4};
         roi   = varargin{5};
         % get labels (digits for sensorimotor, letters for visual rois)
-        if roi==16 | roi==34
+        if roi==16 | roi==34 | roi==6 | roi==24
             letter_label = {'E','I','M','F','J'};
             t = [];
             for i = 1:length(digit)
@@ -398,13 +406,19 @@ switch(what)
                 for i=1:4
                     hold on;
                     indx=[1,2,5,4,3,1]'+(i-1)*5;
-                    line(Y(indx,1),Y(indx,2),Y(indx,3),'color',color{i},'LineWidth',1);
+                    line(Y(indx,1),Y(indx,2),Y(indx,3),'color',color{i},'LineWidth',linewidth);
+                end
+            elseif roi==6 | roi==24 % draw lines differently for visual cortices
+                for i=1:4
+                    hold on;
+                    indx=[1,2,5,4,3,1]'+(i-1)*5;
+                    line(Y(indx,1),Y(indx,2),Y(indx,3),'color',color{i},'LineWidth',linewidth);
                 end
             else
                 for i=1:4
                     hold on;
                     indx=[1:5 1]'+(i-1)*5;
-                    line(Y(indx,1),Y(indx,2),Y(indx,3),'color',color{i},'LineWidth',1);
+                    line(Y(indx,1),Y(indx,2),Y(indx,3),'color',color{i},'LineWidth',linewidth);
                 end
             end
         end;
@@ -418,9 +432,9 @@ switch(what)
             hold off;
         end;
         axis equal;
-        xlabel eig1
-        ylabel eig2
-        zlabel eig3
+        xlabel pc1
+        ylabel pc2
+        zlabel pc3
         
         %__________________________________________________________________
     case 'scatterplotMDS_black'
@@ -1532,27 +1546,31 @@ switch(what)
         B3b = M.data(:,4);
         
         % coordinate is ROI w/ for which it has greatest associated probability
-        [Prop,ROI]   = max([S1 M1 SMA MT V1 V2],[],2); 
+        [Prop,ROI]   = max([S1 M1 SMA MT V1 V1+V2],[],2); 
                     % ROI-> 1...2..3..4..5...6  
         [Prop3,ROI3] = max([Ba1 Ba2 B3a B3b],[],2);
                     % ROI->  7...8...9..10
                 
         % Define ROIS with:
         %...cytoarchitectonic prob (>0.2) - - - - - - - - - - - - - - - - -
-            ROI(Prop<0.2)=0;
+            ROI(Prop<0.15)=0;
             ROI3(Prop3<0.2)=0;
         %...boundaries of 4 major lobes (F.P.O.T.)- - - - - - - - - - - - -
+            ROI(ROI==5) = 6;    
             ROI(ROI==1 & P.data~=2 & Prop<0.25)    = 0;  % sS1  :  parietal and higher prob
             ROI(ROI==2 & P.data~=1 & Prop<0.25)    = 0;  % sM1  :  frontal and higher prob
             ROI(ROI==3 & P.data~=1)                = 0;  % sSMA :  frontal
             ROI(ROI==4 & P.data~=2)                = 0;  % sMT  :  frontal
-            ROI(ROI==5 & P.data~=3)                = 0;  % sV1  :  occipital
-            ROI(ROI==6 & P.data~=3)                = 0;  % sV2  :  occipital
+            
+           % ROI(ROI==6 & P.data~=3)                = 0;  % sV1/2:  occipital
+            %ROI(ROI==5 & P.data~=3)                = 0;  % sV1  :  occipital
             ROI3(ROI3==1 & P.data~=2)              = 0;  % Ba1  :  parietal
             ROI3(ROI3==2 & P.data~=2)              = 0;  % Ba2  :  parietal
             ROI3(ROI3==3 & P.data~=2)              = 0;  % B3a  :  parietal
             ROI3(ROI3==4 & P.data~=2)              = 0;  % B3b  :  parietal
-
+            
+            %ROI(ROI==5) = 6;
+            %ROI(ROI==5) = 0;
         %...average distances of all condition pairs (for SMA, MT, V1, and V2)
         % (and the flatmap coords for left hemi rois)
         idx = size(Avg.data,2)-3;  % column for avg. distance across subjects
@@ -1562,8 +1580,8 @@ switch(what)
                 ROI(ROI==2 & Avg.data(:,idx)<0.15)    = 0;  % sM1
                 ROI(ROI==3 & Avg.data(:,idx)<0.1)     = 0;  % sSMA
                 ROI(ROI==4 & Avg.data(:,idx)<0.1)     = 0;  % sMT
-                ROI(ROI==5 & Avg.data(:,idx)<0.05)    = 0;  % sV1
-                ROI(ROI==6 & Avg.data(:,idx)<0.05)    = 0;  % sV2
+                %ROI(ROI==5 & Avg.data(:,idx)<0.05)    = 0;  % sV1
+                %ROI(ROI==6 & Avg.data(:,idx)<0.05)    = 0;  % sV2
                 
                 %...flatmap X Y coordinates - - - - - - - - - - - - - - - -
                 % SMAcoords
@@ -1580,8 +1598,8 @@ switch(what)
                 ROI(ROI==2 & Avg.data(:,idx)<0.07)    = 0;  % sM1
                 %ROI(ROI==3 & Avg.data(:,10)<0.001)=0;     % sSMA- most voxels don't survive distance criteria in right hemi
                 ROI(ROI==4 & Avg.data(:,idx)<0.05)    = 0;  % sMT
-                ROI(ROI==5 & Avg.data(:,idx)<0.05)    = 0;  % sV1
-                ROI(ROI==6 & Avg.data(:,idx)<0.05)    = 0;  % sV2
+                %ROI(ROI==5 & Avg.data(:,idx)<0.05)    = 0;  % sV1
+                %ROI(ROI==6 & Avg.data(:,idx)<0.05)    = 0;  % sV2
         end
         
         % - - - - - - - - - - - Save ROIpaint files - - - - - - - - - - - -  
@@ -1591,8 +1609,8 @@ switch(what)
         areas{3}{1}  = {'sSMA'}; 
         areas{4}{1}  = {'sMT'};
         areas{5}{1}  = {'sV1'}; 
-        areas{6}{1}  = {'sV2'}; 
-        names        = {'sS1','sM1','sSMA','sMT','sV1','sV2'};
+        areas{6}{1}  = {'sV1/V2'}; 
+        names        = {'sS1','sM1','sSMA','sMT','sV1','sV1/V2'};
         
         colors=[255 0 0;...  % sS1
             0 255 0;...      % sM1
@@ -1647,9 +1665,9 @@ switch(what)
 
         for s=sn
             for h=1:2
-                D  = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI.paint']));   % premade ROIs from fsaverage_sym
-                D2 = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI_2.paint'])); % sS1 sM1 sSMA sMT sV1 sV2
-                D3 = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI_3.paint'])); % sBa1 sBa2 sB3a sB3b
+                D  = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI.paint']));   % premade ROIs from fsaverage_sym (rois 11+)
+                D2 = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI_2.paint'])); % sS1 sM1 sSMA sMT sV1 sV2 (rois 1:6)
+                D3 = caret_load(fullfile(caretDir,atlasname,hemName{h},['ROI_3.paint'])); % sBa1 sBa2 sB3a sB3b (rois 7:10)
                 
                 caretSubjDir = fullfile(caretDir,[atlasA subj_name{s}]);
                 file         = fullfile(glmDir{glm},subj_name{s},'mask.nii');
@@ -1689,9 +1707,9 @@ switch(what)
         % measured BOLD in rois.
         
         % Defaults
-        sn   = [10:13];
+        sn   = [10:17];
         glm  = 3;
-        roi  = 1:length(regname);
+        roi  = 12;
         vararginoptions(varargin,{'sn','glm','roi'});
 
         pre  = 4;   % how many TRs before trial onset (2.8 secs)
@@ -1726,11 +1744,11 @@ switch(what)
     case 'ROI_timeseries_plot'                                              % STEP 4.3(optional): plots timeseries for specified region by pressing speed (enter sn, region, glm #)
         glm = 3;
         sn  = 2;
-        roi = 2;
+        roi = 12;
         vararginoptions(varargin,{'sn','glm','roi'});
         
         figure('Name',sprintf('%s Timeseries from %s',reg_title{roi},sprintf('glm%d',glm)),'NumberTitle','off')
-        D   = load(fullfile(regDir,sprintf('glm%dreg_timeseries',glm)));
+        D   = load(fullfile(regDir,sprintf('glm%d_reg_timeseries',glm)));
         
         for s = sn
             T = getrow(D,D.SN==s);
@@ -1833,7 +1851,8 @@ switch(what)
         glm        = 3;
         sn         = 10:17;
         %roi        = [1:36];
-        roi = [11,12,16,34];
+        roi = [11,12,16,34,6,24];
+        %roi = [6,24];
         addon      = 0;     % if true, loads previous reg_betas .mat file and appends new subjects
         vararginoptions(varargin,{'sn','glm','roi','addon'});
         
@@ -1897,7 +1916,7 @@ switch(what)
     case 'ROI_stats'
         glm = 3;
         sn  = 10:17;
-        roi = [5,6,11,12,16,23,24,29,30,34];
+        roi = [11,12,16,34,6,24];
         vararginoptions(varargin,{'sn','glm','roi'});
         
         T = load(fullfile(regDir,sprintf('glm%d_reg_betas.mat',glm))); % loads region data (T)
@@ -2038,10 +2057,14 @@ switch(what)
         T   = load(fullfile(regDir,sprintf('glm%d_reg_Toverall.mat',glm)));
         %T   = load(fullfile(regDir,sprintf('glm%d_reg_Toverall_noMeanSpeedPattern.mat',glm)));
         T   = getrow(T,T.layer==layer);
-        if roi~=16 & roi~=34
+        if ~any(ismember(roi,[16,34,6,24]))
             IPM = T.IPM(T.region==roi & ismember(T.SN,sn),:); 
-        else % if visual cortices, avg. IPMs across hemis
+        elseif any(ismember(roi,[16,34])) % if visual cortices, avg. IPMs across hemis
             T = getrow(T,T.region==16 | T.region==34);
+            T = tapply(T,{'SN'},{'IPM','mean'});
+            IPM = T.IPM;
+        elseif any(ismember(roi,[6,24])) % if visual cortices, avg. IPMs across hemis
+            T = getrow(T,T.region==6 | T.region==24);
             T = tapply(T,{'SN'},{'IPM','mean'});
             IPM = T.IPM;
         end;
@@ -2101,10 +2124,84 @@ switch(what)
                 title(reg_title{roi});
         end
 %         keyboard
+    case 'ROI_patternReliability'                                          % plot w/in subj, w/in speed rdm reliability (Across two partitions), compare with across-speed correlations. Insights into RSA stability    
+        % Splits data for each session into two partitions (even and odd runs).
+        % Calculates correlation coefficients between each condition pair 
+        % between all partitions.
+        % Default setup includes subtraction of each run's mean
+        % activity pattern (across conditions).
+        glm = 3;
+        roi = 2; % default roi
+        sn  = 6;
+        mean_subtract = 1; % subtract run means
+        beta_type = 'raw'; % use raw, not normalized betas
+        % Correlate patterns across even-odd run splits within subjects.
+        % Does correlation across all depths.
+        vararginoptions(varargin,{'roi','glm','sn'});
+        R    = []; % output struct
+        runs = 1:numel(run);
+        % Select function to harvest approrpaite betas
+        switch beta_type
+            case 'raw'
+                betaFcn = 't.beta{1}(1:length(D.tt),:);';
+            case 'uni'
+                betaFcn = 'bsxfun(@rdivide,t.beta{1}(1:length(D.tt),:),ssqrt(t.resMS{1}));';
+            case 'multi'
+                betaFcn = 't.betaW{1}(1:length(D.tt),:);';
+        end
+        % Load subject's betas in all rois
+        T = load(fullfile(regDir,sprintf('glm%d_reg_betas.mat',glm)));      
+        % loop across and correlate
+        for s = sn % for each subject
+            D = load(fullfile(glmDir{glm}, subj_name{s}, 'SPM_info.mat')); % load subject's trial structure
+            for r = roi % for each roi
+                t     = getrow(T,T.SN==s & T.region==r); 
+                betas = eval(betaFcn); % get specified patterns
+                % remove run means?
+                if mean_subtract
+                    C0  = indicatorMatrix('identity',D.run);
+                    betas = betas - C0*pinv(C0)* betas; % run mean subtraction  
+                end
+                % split patterns into even and odd runs, avg. within splits
+                Bi    = [];
+                parts = logical(rem(runs,2));
+                for i = 1:2
+                    idx        = logical(ismember(D.run,runs(parts)));
+                    b.digit    = D.digit(idx);
+                    b.numPress = D.numPresses(idx);
+                    b.speed    = D.speed(idx);
+                    b.tt       = D.tt(idx);
+                    b.split    = ones(sum(idx),1).*i;
+                    b.sn       = D.SN(idx);
+                    b.betas    = betas(idx,:);
+                    b  = tapply(b,{'sn','digit','speed','numPress','tt','split'},{'betas','mean'});
+                    Bi = addstruct(Bi,b);
+                    parts = ~parts; % since only even-odd splits, this works (maybe not elegant)
+                end
+                % correlation harvest matrices
+                sameCond  = tril(bsxfun(@eq,Bi.tt,Bi.tt'),-1);
+                diffSplit = tril(bsxfun(@(x,y) x~=y,Bi.split,Bi.split'),-1);
+                % do correlations between partition patterns
+                Rm = corr(Bi.betas');
+                % harvest into output structure
+                w.corr   = Rm(sameCond & diffSplit);
+                w.within = ones(sum(sum(sameCond & diffSplit)),1);
+                w.sn     = w.within.*s;
+                w.roi    = w.within.*r;
+                a.corr   = Rm(~sameCond & diffSplit);
+                a.sn     = ones(sum(sum(~sameCond & diffSplit)),1).*s;
+                a.roi    = ones(sum(sum(~sameCond & diffSplit)),1).*r;
+                a.within = zeros(sum(sum(~sameCond & diffSplit)),1);
+                r = [];
+                r = addstruct(w,a);
+                R = addstruct(R,r);
+            end
+        end;
+        varargout = {R};  
+    
 
 
-
-    case '0' % ------------ Pattern Scaling Paper- Figure and Stats cases
+    case '0' % ------------ NeuroImage Stability Paper- Figure and Stats cases
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -        
     case '0' % Project activity patterns onto surface for figs.
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2153,7 +2250,7 @@ switch(what)
                 caret_save(fullfile(caretSDir,sprintf('s%02d_glm%d_hemi%d_finger.metric',s,glm,h)),M);
             end;
         end;
-    case 'surf_fingerpatterns'                                              % Make finger pattern jpegs
+    case 'surf_fingerpatternsM1S1'                                          % Make finger pattern jpegs
         sn = 10;
         glm = 3;
         vararginoptions(varargin,{'sn','glm'});
@@ -2225,10 +2322,84 @@ switch(what)
         set(gcf,'InvertHardcopy','off'); % allows save function to save pic w/ current background colour (not default to white)
         wysiwyg;
         
-        keyboard
-        saveas(gcf, [subj_name{sn},'_',hemName{h},'_',sprintf('%d',mm)], 'jpg')
+        %keyboard
+        %saveas(gcf, [subj_name{sn},'_',hemName{h},'_',sprintf('%d',mm)], 'jpg')
+    case 'surf_fingerpatternsV1V2'                                          % Make finger pattern jpegs
+        sn = 10;
+        glm = 3;
+        vararginoptions(varargin,{'sn','glm'});
+        
+        h=1; % left hemi
+        groupDir=[gpCaretDir filesep hemName{h} ];
+        cd(groupDir);
+        border=fullfile(caretDir,'fsaverage_sym',hemName{h},['V1V2.border']);
+        switch(h)
+            case 1
+                coord='lh.FLAT.coord';
+                topo='lh.CUT.topo';
+                xlims=[70 115]; % may need to adjust locations for pics
+                %ylims=[-1 18];
+                ylims=[-10 50];
+            case 2
+                error('rh V1V2 not defined');
+                coord='rh.FLAT.coord';
+                topo='rh.CUT.topo';
+                xlims=[-10 20];
+                ylims=[-15 30];   
+        end;
+        
+        
+        B      = caret_load(border);
+        data   = fullfile(caretDir,['x' subj_name{sn}],hemName{h},sprintf('s%02d_glm%d_hemi%d_finger.metric',sn,glm,h));
+        sshape = fullfile(caretDir,'fsaverage_sym',hemName{h},[hem{h} '.surface_shape']);
+        %         subplot(2,3,1);
+        
+        % plot image of the portion of cortical surface we are projecting
+        % finger patterns onto
+        figure('Color',[1 1 1]); % make figure
+        M=caret_plotflatmap('col',2,'data',sshape,'border',B.Border,'bordercolor',{'k.','k.','w.','w.'},'topo',topo,'coord',coord,'xlims',xlims,'ylims',ylims,'bordersize',10);
+        colormap('gray');
+        set(gca,'XTick',[]); % remove X and Y axis ticks
+            set(gca,'YTick',[]);
+            %axis equal;
+            box on
+            ax = get(gca);
+            ax.XAxis.LineWidth = 4;
+            ax.YAxis.LineWidth = 4;
+        
+        % plot finger patterns
+        figure('Color',[1 1 1]); % make figure 
+        % plot each pattern
+        for i=1:20
+            subplot(4,5,i);
+            [M,d]=caret_plotflatmap('M',M,'col',i,'data',data,'cscale',[-6 12],...
+                'border',B.Border,'bordercolor',{'k.','k.','w.','w.'},'topo',topo,'coord',coord,'bordersize',10);
+            maxT(i)=max(d(:));
+            minT(i)=min(d(:));
+        end;
+        % scale each pattern
+        mm = 10;%max(maxT);
+        for i=1:20
+            subplot(4,5,i);
+            caxis([-mm/2 mm]);   % scale color across plots
+            set(gca,'XTick',[]); % remove X and Y axis ticks
+            set(gca,'YTick',[]);
+            %axis equal;
+            box on
+            ax = get(gca);
+            ax.XAxis.LineWidth = 4;
+            ax.YAxis.LineWidth = 4;
+            colormap jet
+        end;
+        set(gcf,'PaperPosition',[1 1 10 7]);
+        set(gcf,'InvertHardcopy','off'); % allows save function to save pic w/ current background colour (not default to white)
+        wysiwyg;
+        
+        %keyboard
+        %saveas(gcf, [subj_name{sn},'_',hemName{h},'_',sprintf('%d',mm)], 'jpg')
+    
     case '0' % Make first-pass versions of paper figures.
-    case 'Fig2'   
+    case 'depreciated_Fig2'   
        % create two panel figure of pattern scaling for paper. Exact
        % placement of patterns in voxel-space was done in illustrator
        % (here, just got raw panels ready).
@@ -2270,15 +2441,27 @@ switch(what)
        ylim([-0.2 7])
        set(gca,'XTick',[]);
        set(gca,'YTick',[]);
-    case 'Fig3'   
+    case 'Fig2'   
        % fingerpatterns and ROI_stats figure. 
        figure('Color',[1 1 1]); 
-       % Panel A: use case 'surf_fingerpatterns','sn',14 for patterns from paper.
+       % Panel A: use case ('surf_fingerpatternsM1S1','sn',14,'glm',3) for patterns from paper.
        
        % Panel B: avg. adjusted activity of raw patterns in M1, S1, and V12
        % (avg. across hemispheres, NOT combined patterns together).
-       fivedigitFreq3_imana('FIG_ROIactivity','sn',10:17,'roi',[11,12,16,34],'fig',gcf);
-    case 'Fig4'   
+       
+       
+       
+       % plot group avg. data
+       fivedigitFreq3_imana('FIG_ROIactivity','sn',10:17,'roi',[11,12,24],'fig',gcf,'sty','3black');
+       hold on
+       % next, plot individual data
+       for s = 10:17
+           %D = fivedigitFreq3_imana('HARVEST_ROIactivity','sn',s,'roi',[11,12,24],'glm',3,'layer',1);
+           hold on
+           fivedigitFreq3_imana('FIG_ROIactivity','sn',s,'roi',[11,12,24],'fig',gcf,'sty','3subjs');
+       end
+       hold off
+    case 'Fig3'   
        % MDS of M1 and (bilateral) V12 rep structures.
        figure('Color',[1 1 1]);
        % row 1 (panel A): contralateral M1 rep structures from different angles
@@ -2292,42 +2475,47 @@ switch(what)
        xlim([-0.001 0.27]); title('');
        set(gca,'CameraPosition',[-1.2593,-1.2668,0.2982]);
        % row 2 (panel B): bilateral V12 rep structures
-       subplot(2,3,4); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',16,'fig',gcf,'lines',1);
+       subplot(2,3,4); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',6,'fig',gcf,'lines',1);
        xlim([-0.001 0.27]); title('');
        set(gca,'CameraPosition',[-1.5793,-0.2113,0.2096]);
-       subplot(2,3,5); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',16,'fig',gcf,'lines',1);
+       subplot(2,3,5); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',6,'fig',gcf,'lines',1);
        xlim([-0.001 0.27]); title('V12');
        set(gca,'CameraPosition',[-1.3764,0.7711,0.4536]);
-       subplot(2,3,6); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',16,'fig',gcf,'lines',1);
+       subplot(2,3,6); fivedigitFreq3_imana('ROI_MDS_overall','sn',10:17,'roi',6,'fig',gcf,'lines',1);
        xlim([-0.001 0.27]); title('');
        set(gca,'CameraPosition',[-0.1524,-1.7929,0.4305]);
-    case 'Fig5'
+    case 'Fig4'
        % Plot RDM lines in first col, split-half corrs in 2nd col,
        % cross-speed RDM corrs in 3rd col, diff b/t corrs in 4th col
        % Each row is an ROI: 1st = M1, 2nd = S1, 3rd = V12 (bilateral)
+       clrdots = 'modelFits';%'modelFits'; % clr dots per 'subj', log-linear 'modelFits', or 'none'
        figure('Color',[1 1 1]);
        % Column 1 plots
-       subplot(3,5,[1:2]);   fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',12,'subplt',gca); ylim([-0.002 0.053]); % panel A- M1
+       subplot(3,5,[1:2]);   fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',12,'subplt',gca); ylim([-0.002 0.06]); % panel A- M1
        hold on; drawline(0,'dir','horz','linewidth',1); hold off;
-       subplot(3,5,[6:7]);   fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',11,'subplt',gca); ylim([-0.002 0.053]); % panel E- S1
+       title('contra M1  .');
+       subplot(3,5,[6:7]);   fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',11,'subplt',gca); ylim([-0.002 0.06]); % panel E- S1
        hold on; drawline(0,'dir','horz','linewidth',1); hold off;
-       subplot(3,5,[11:12]); fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',16,'subplt',gca); ylim([-0.002 0.053]); % panel I- V12
+       title('contra S1  .');
+       subplot(3,5,[11:12]); fivedigitFreq3_imana('FIG_DistShape','sn',10:17,'glm',3,'roi',6,'subplt',gca); ylim([-0.002 0.06]); % panel I- V12
        hold on; drawline(0,'dir','horz','linewidth',1); hold off;
+       title('bilateral V1/V2  .');
        set(gca,'XTickLabel',{'E:I','E:M','E:F','E:J','I:M','I:F','I:J','M:F','M:J','F:J'});
        xlabel('Letter pair');
        % Column 2:4 plots
        h = {subplot(3,5,3),subplot(3,5,4),subplot(3,5,5)}; 
-       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',12,'subplt',h); % panels B,C,D- M1 
+       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',12,'subplt',h,'clrdots',clrdots); % panels B,C,D- M1 
        h = {subplot(3,5,8),subplot(3,5,9),subplot(3,5,10)}; 
-       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',11,'subplt',h); % panels B,C,D- S1
+       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',11,'subplt',h,'clrdots',clrdots); % panels B,C,D- S1
        h = {subplot(3,5,13),subplot(3,5,14),subplot(3,5,15)}; 
-       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',16,'subplt',h); % panels B,C,D- V12
+       fivedigitFreq3_imana('FIG_rdmStability','sn',10:17,'glm',3,'roi',24,'subplt',h,'clrdots',clrdots); % panels B,C,D- V12
        subplot(3,5,13); hold on; drawline(0,'dir','horz','linewidth',1); hold off;
        subplot(3,5,14); hold on; drawline(0,'dir','horz','linewidth',1); hold off;
        h = {subplot(3,5,3),subplot(3,5,4),subplot(3,5,8),subplot(3,5,9)};
-       for i=1:4; set(h{i},'YLim',[0.75 1]); end  
-       set(subplot(3,5,5),'YLim',[-0.15 0.16]);
-       set(subplot(3,5,10),'YLim',[-0.15 0.16]);
+       %for i=1:4; set(h{i},'YLim',[0.75 1]); end  
+       for i=1:4; set(h{i},'YLim',[0.5 1]); end  
+       %set(subplot(3,5,5),'YLim',[-0.15 0.16]);
+       %set(subplot(3,5,10),'YLim',[-0.15 0.16]);
        %set(gca,'Position',[0.7813,0.1100,0.1237,0.2157]);
     case '0' % Cases called by figures above or stats for results.
     case 'HARVEST_behaviour'
@@ -2363,31 +2551,42 @@ switch(what)
 
         % load appropriate file and get rows for subjs and roi
         D = load(fullfile(regDir,sprintf('glm%d_reg_Tspeed.mat',glm)));
-        D = getrow(D,D.layer==layer & ismember(D.region,roi) & ismember(D.SN,sn));
-        % remove fields from datastructure we don't need..
-        D = rmfield(D,{'RDM','numVox','layer','regSide','regType'});
-        
         % avg. visual cortices across hemispheres
         if sum(ismember(roi,[16,34]))>0
-            T = getrow(D,D.region==16 | D.region==34);
-            T = tapply(T,{'speed','SN'},{'act','mean'},{'psc','mean'});
+            T = getrow(D,(D.region==16 | D.region==34) & ismember(D.SN,sn) & D.layer==layer);
+            T = tapply(T,{'speed','SN'},{'act','mean'},{'psc','mean'},{'RDM','mean'});
             T.region = ones(size(T.act)).*16;
             
-            D = getrow(D,~ismember(D.region,[16,34]));
+            D = getrow(D,D.layer==layer & ismember(D.region,roi) & ismember(D.SN,sn));
+            D = getrow(D,~ismember(D.region,[16,34,6,24]));
             D = addstruct(D,T);
+        elseif sum(ismember(roi,[6,24]))>0
+            T = getrow(D,(D.region==6 | D.region==24) & ismember(D.SN,sn) & D.layer==layer);
+            T = tapply(T,{'speed','SN'},{'act','mean'},{'psc','mean'},{'RDM','mean'});
+            T.region = ones(size(T.act)).*24;
+            
+            D = getrow(D,D.layer==layer & ismember(D.region,roi) & ismember(D.SN,sn));
+            D = getrow(D,~ismember(D.region,[16,34,6,24]));
+            D = addstruct(D,T);
+        else
+            D = getrow(D,D.layer==layer & ismember(D.region,roi) & ismember(D.SN,sn));
         end
+        % remove fields from datastructure we don't need..
+        D = rmfield(D,{'numVox','layer','regSide','regType'});
+%         D.RDM = mean(D.RDM,2); % avg. pairwise distances per freq
         D.numPress = 2.^D.speed;
         varargout = {D};
     case 'FIG_ROIactivity'                                                  % plot avg (adjusted) activity   
         % plots average activities for M1, S1, and (bilateral) V12.
         % Avg. activity is average betas within speed in that roi
         % Shaded regions are stderr across subjects.
-        roi   = [11,12,16];
+        roi   = [11,12,24];
         sn    = 10:17;
         glm   = 3;
         layer = 1;
         fig   = [];
-        vararginoptions(varargin,{'roi','glm','sn','layer','fig'});
+        sty   = '3black';
+        vararginoptions(varargin,{'roi','glm','sn','layer','fig','sty'});
 
         % get avg. activity datatstructure
         D = fivedigitFreq3_imana('HARVEST_ROIactivity','sn',sn,'roi',roi,'glm',glm,'layer',layer);
@@ -2396,7 +2595,7 @@ switch(what)
         if isempty(fig); figure('Color',[1 1 1]); else; fig; end
         
         % plot 
-        style.use('3black');
+        style.use(sty);
         plt.line(D.numPress,D.act,'split',D.region);
         %plt.line(log(D.numPress),D.act,'split',D.region);
         plt.legend('northwest',{'S1','M1','V1/V2'});
@@ -2421,9 +2620,10 @@ switch(what)
         T = [];
         for i = 1:length(unique(D.region))
             r = roi(i);
-            for s = sn
+           for s = sn
                 d = getrow(D,D.SN==s & D.region==r);
-                t.y_bar_mean = repmat(mean(d.act),4,1)';
+                %d = getrow(D,D.region==r);
+                t.y_bar_mean = repmat(mean(d.act),size(d.act,1),1)';
                 t.act = d.act';
                 % fit intercept (mean) to scale lower-bound of fits
                 [t.int_beta,stats] = linregress(t.act',t.y_bar_mean','intercept',0); % no int b/c d.act is an intercept
@@ -2445,9 +2645,11 @@ switch(what)
                 t.sn  = s;
                 t.roi = r;
                 T = addstruct(T,t);
-            end
+           end
             if verbose
                 fprintf('roi: %s \n',reg_title{r})
+                % one-sided ttest because we expect log_r2 to fit better in
+                % M1/S1. change to 2-tailed for V1/V2
                 ttest(T.log_r2(T.roi==r),T.lin_r2(T.roi==r),1,'paired')
                 %signtest(T.log_r2(T.roi==r)-T.lin_r2(T.roi==r))
             end
@@ -2456,7 +2658,7 @@ switch(what)
     case 'ROI_stats_splithalf'
         glm = 3;
         sn  = 10:17;
-        roi = [11,12,16,34];
+        roi = [11,12,16,34,6,24];
         partitions = [1:2:7; 2:2:8];
         vararginoptions(varargin,{'sn','glm','roi'});
         
@@ -2496,10 +2698,11 @@ switch(what)
 
         % % save
         save(fullfile(regDir,sprintf('glm%d_reg_splithalf_Tspeed.mat',glm)),'-struct','Ts');
+        varargout = {Ts};
         fprintf('\nDone.\n')
     case 'HARVEST_rdmStability'
         % split-half correlations of RDM for each subject. 
-        % RDMs include all 20 conds.
+        % RDMs include conds split per frequency.
         % Dissimilarities are calculated for each partition with
         % crossvalidation (distance_euclidean).
         glm     = 3;
@@ -2509,11 +2712,14 @@ switch(what)
         % Correlate patterns across even-odd run splits WITHIN subjects.
         % Does correlation across all depths.
         vararginoptions(varargin,{'roi','glm','sn','type'});
-        
+        if length(roi)>1; error('only one roi at a time.'); end
         T = load(fullfile(regDir,sprintf('glm%d_reg_splithalf_Tspeed.mat',glm)));
         
         if roi==16 | roi==34 % if visual cortices, avg. across hemispheres
             T = getrow(T,T.region==16 | T.region==34);
+            T = tapply(T,{'SN','partition','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        elseif roi==6 | roi==24 
+            T = getrow(T,T.region==6 | T.region==24);
             T = tapply(T,{'SN','partition','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
         else
             T = getrow(T,T.region==roi);
@@ -2536,7 +2742,7 @@ switch(what)
                     error 'No such correlation type'
             end
             % take correlations between partitions
-            R = R(1:4,5:8); % take off-diag square matrix
+            R = R(1:4,5:8); % take off-diag square matrix (correlations between even-odd data splits)
             for spd1 = 1:3
                 w1 = R(spd1,spd1);              % observed spd 1 corr- used for prediction
                 for spd2 = (spd1+1):4
@@ -2546,9 +2752,12 @@ switch(what)
                     % harvest cross-speed, cross-partition correlations
                     b.pcorr     = ssqrt(w1*w2); % predicted corr- sqrt b/c geometric mean
                     b.acorr     = ssqrt(b1*b2); % observed corr
+                    %b.acorr     = (b1+b2)/2;
                     b.pcorr_fz  = fisherz(b.pcorr); % fisherz-transformed correlations
                     b.acorr_fz  = fisherz(b.acorr);
-                    b.deviation = b.acorr - b.pcorr; % Actual - Predicted speed pair correlation 
+                    b.deviationN= b.acorr - b.pcorr; % Actual - Predicted speed pair correlation 
+                    b.ratioNdev = b.deviationN./b.pcorr;
+                    b.ratioNscl = b.acorr/b.pcorr;
                     b.dev_fz    = b.acorr_fz - b.pcorr_fz; % fisherz-transformed deviation
                     b.SN        = s;
                     b.roi       = roi;
@@ -2566,6 +2775,16 @@ switch(what)
                 W = addstruct(W,w);
             end
         end;
+        
+        %keyboard
+        % rescale by avg. noise ceiling across subjs for each pairdIdx
+        b = []; B = [];
+        for i = 1:6
+            b = getrow(A,A.pairIdx==i);
+            b.ratioNsclAvg = b.acorr./mean(b.pcorr);
+            B = addstruct(B,b);
+        end
+        A = B;
         % done stability analysis..
         varargout = {A,W};
     case 'FIG_rdmStability'                                                 % Primary stability analysis
@@ -2574,11 +2793,30 @@ switch(what)
         sn      = 10:17;
         type    = 'pearson';
         subplt  = [];
+        clrdots = 'none';
         % Correlate patterns across even-odd run splits WITHIN subjects.
         % Does correlation across all depths.
-        vararginoptions(varargin,{'roi','glm','sn','type','subplt'});
+        vararginoptions(varargin,{'roi','glm','sn','type','subplt','clrdots'});
         
-        [A,W] = fivedigitFreq3_imana('HARVEST_rdmStability','sn',sn,'roi',roi,'glm',glm,'type',type);
+        [A,W] = fivedigitFreq3_imana('HARVEST_rdmStability','sn',sn,'roi',roi,'glm',glm,'type',type);   % get correlations
+        
+        
+        switch clrdots
+            case 'modelFits'
+                % colour subject data points by linear or log-linear avg.
+                % scaling fits
+                clrs = {};
+                T    = fivedigitFreq3_imana('STATS_ROIactivity','sn',sn,'roi',roi,'glm',glm);                  % get log-linear fits
+                % determine which subjects had better log-linear fits
+                betterLog = [T.log_r2 > T.lin_r2]+1;
+                logColors = {[0.7 0.7 0.7],[0.3 0.3 0.3]}; % lightgrey = <lin fit, darkgray = <log fit
+                for i = 1:length(sn)
+                    clrs{i} = logColors{betterLog(i)};
+                end
+            case 'subj'
+                % colour dots for each subject separately
+                clrs = plt.helper.get_shades(length(sn),'jet','decrease');
+        end
         
         % % ..now Plotting
         if isempty(subplt)
@@ -2589,33 +2827,83 @@ switch(what)
         end
         % plot within-subject-WITHIN-speed-between-partition RDM correlations
         axes(subplt{1});
-        myboxplot(W.speed,W.corr,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',0);
-        set(gca,'XTickLabel',{'1','2','3','4'});
-        ylabel('split-half reliability');
-        xlabel('pressing speed');
-        info = get(gca); wlims = info.YAxis.Limits;
+        myboxplot(A.pairIdx,A.acorr,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',1);
+        %style.use('1black');
+        %plt.dot(A.pairIdx,A.acorr,'split',A.pairIdx);
+        %legend off
+        title(reg_title{roi});
+        set(gca,'XTickLabel',{'1:2','1:3','1:4','2:3','2:4','3:4'});
+        xlabel('freq. condition pair');
+        ylabel('cross-freq. correlation');
+        if exist('clrs','var')
+            hold on
+            for j = 1:length(sn)
+                % plot single-subject points
+                s   = sn(j);
+                a   = getrow(A,A.SN==s);
+                plot(1:6,a.acorr,'LineStyle','none','Marker','o',...
+                    'MarkerSize',5,'MarkerEdgeColor',clrs{j},'MarkerFaceColor',clrs{j});
+            end
+            hold off
+        end   
+        % get ylim info
+        info = get(gca); 
+        wlims = info.YAxis.Limits;
         
         % plot within-subjet-BETWEEN-speed-between-partition RDM correlations
         axes(subplt{2});
-        myboxplot(A.pairIdx,A.acorr,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',0);
-        title(reg_title{roi});
-        set(gca,'XTickLabel',{'1:2','1:3','1:4','2:3','2:4','3:4'});
-        xlabel('speed pair');
+        myboxplot(W.speed,W.corr,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',1);
+        %style.use('4speedsMarkers');
+        %plt.dot(W.speed,W.corr,'split',W.speed);
+        %legend off
+        set(gca,'XTickLabel',{'1','2','3','4'});
+        xlabel('freq. condition');
+        ylabel('split-half reliability');
+        if exist('clrs','var')
+            hold on
+            for j = 1:length(sn)
+                % plot single-subject points
+                s   = sn(j);
+                w   = getrow(W,W.SN==s);
+                plot(1:4,w.corr,'LineStyle','none','Marker','o',...
+                    'MarkerSize',5,'MarkerEdgeColor',clrs{j},'MarkerFaceColor',clrs{j});
+            end
+            hold off
+        end    
         ylim(wlims);
         % bring this subplot nearer to first subplot (sorta make it the
         % same plot space)
-        info = get(gca); info.YAxis.Visible = 'off';
+        %info = get(gca); info.YAxis.Visible = 'off';
         
         
         % plot deviations of actual-predicted between-speed correlations (2
         % points per subject b/c 2 partitions)
         axes(subplt{3});
-        myboxplot(A.pairIdx,A.deviation,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',0);
-        drawline(0,'dir','horz');
+%         myboxplot(A.pairIdx,A.deviationN,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',0);
+%         drawline(0,'dir','horz');
+%         set(gca,'XTickLabel',{'1:2','1:3','1:4','2:3','2:4','3:4'});
+%         ylabel('Measured - Expected correlation');
+        myboxplot(A.pairIdx,A.ratioNscl,'linecolor',[0 0 0],'xtickoff','style_tukey','plotall',1);
+        %style.use('1black');
+        %keyboard
+        %plt.dot(A.pairIdx,A.ratioNscl,'split',A.pairIdx); 
+        %legend off
+        drawline(1,'dir','horz');
         set(gca,'XTickLabel',{'1:2','1:3','1:4','2:3','2:4','3:4'});
-        ylabel('Observed - Predicted correlation');
-        xlabel('speed pair');
-        
+        ylabel('Measured / Expected correlation');
+        xlabel('freq. condition pair');
+        if exist('clrs','var')
+            hold on
+            for j = 1:length(sn)
+                % plot single-subject points
+                s   = sn(j);
+                a   = getrow(A,A.SN==s);
+                plot(1:6,a.ratioNscl,'LineStyle','none','Marker','o',...
+                    'MarkerSize',5,'MarkerEdgeColor',clrs{j},'MarkerFaceColor',clrs{j});
+            end
+            hold off
+        end
+            
         %set(gcf,'PaperPosition',[0.25 2.5 8 3]);
         wysiwyg
     case 'STATS_rdmStability'                                       
@@ -2635,12 +2923,15 @@ switch(what)
         
         % sign test for Observed - Predicted reliabilities at each of
         % the six speed pairs (1:2, 1:3, 1:4, 2:3, 2:4, 3:4).
-        p = []; d = [];
+        p = []; d = []; h= [];
         for i = 1:6
-            p(end+1) = signtest(A.deviation(A.pairIdx==i),[],'tail','left'); 
-            d(end+1) = mean(A.deviation(A.pairIdx==i));
+            %[p(end+1),h(end+1)] = signtest(A.deviationN(A.pairIdx==i),[],'tail','left'); 
+            %d(end+1) = mean(A.deviationN(A.pairIdx==i));
+            [p(end+1),h(end+1)] = signtest(A.ratioNscl(A.pairIdx==i)-1,[],'tail','left'); 
+            d(end+1) = mean(A.ratioNscl(A.pairIdx==i));
         end
-        p 
+        p
+        h
         d
         varargout = {A,W};
     case 'FIG_DistShape'                                                    % plot finger pattern RDMs for each speed as a different line. Subplot for each roi.       
@@ -2657,6 +2948,9 @@ switch(what)
         D = getrow(D,D.layer==layer);
         if roi==16 | roi==34 % if visual cortices, avg. rdms over hemispheres
             D = getrow(D,D.region==16 | D.region==34);
+            D = tapply(D,{'SN','speed'},{'RDM','mean'});
+        elseif roi==6 | roi==24 % if visual cortices, avg. rdms over hemispheres
+            D = getrow(D,D.region==6 | D.region==24);
             D = tapply(D,{'SN','speed'},{'RDM','mean'});
         else
             D = getrow(D,D.region==roi);
@@ -2699,6 +2993,862 @@ switch(what)
          
         %keyboard
     
+    case 'STATS_distortionCurve'    
+        % Simulates distorted model fitting between usage and muscle
+        % models.
+        % Generates rdm from each model G, distorts it, calculates
+        % correlation b/t distorted and original rdm, and with other model
+        % rdm.
+        % Distorts paired distances in Usage rdm.
+        % Distortions done to all 10 distances.
+        % Model with highest correlation is winner. 
+        % Returns results in plotting-friendly data structure.
+        disLevel =[0:0.1:1];
+        compLvl  = 'hard';
+        vararginoptions(varargin,{'disLevel','compLvl'});
+        numIters = 1000;
+        squareroot = 0; % don't take ssqrt of rdms
+        % load models
+        load('/Users/sarbuckle/Documents/git_repos/pcm_toolbox/recipe_finger/data_recipe_finger7T.mat');
+        % second moments for models
+        if strcmp('hard',compLvl)
+            G{1} = Model(1).G_cent; % muscle model
+            compLvl = 2;
+        elseif strcmp('med',compLvl)
+            G{1} = Model(3).G_cent; % somatotopic model
+            compLvl = 1;
+        end
+        G{2} = Model(2).G_cent; % usage model
+        C = rsa.util.pairMatrix(5); % contrast matrix
+        Mrdm = sum((C*G{1}).*C,2);  % muscle model RDM
+        Nrdm = sum((C*G{2}).*C,2);  % usage model RDM
+        if squareroot
+            Mrdm = ssqrt(Mrdm);
+            Nrdm = ssqrt(Nrdm);
+        end
+        T = []; % output structure
+        for m = 1:2 % for each model
+            % calc paired distances between fingers from second moments
+            rdm = sum((C*G{m}).*C,2);
+            if squareroot
+                rdm = ssqrt(rdm);
+            end
+            rdm = repmat(rdm,1,numIters);
+            %dist_func = {@(x,y) ones(x,y).*-1, @(x,y) ones(x,y), @(x,y) sample_wr([1,-1],x,y)};
+            for j = 10 % for all 10 distances
+                for d = disLevel % for each distortion level
+                    Drdm = rdm;
+                    jidx = sample_wor([1:10],j,numIters);                  % fingerpair(s) to distort
+                    jidx = jidx + kron(ones(j,1),[0:10:numIters*10 - 10]); % add values to correctly index by column-major order
+                    didx = sample_wr([1,-1],j,numIters);
+                    Drdm(jidx) = Drdm(jidx) + (Drdm(jidx).*d.*didx);       % distort by add or subtracting some percentage 
+                    
+                    % calculate model correlations
+                    t.mcorr  = corr(Mrdm,Drdm)';
+                    t.mcorrN = corrN(Mrdm,Drdm)';
+                    t.ncorr  = corr(Nrdm,Drdm)';
+                    t.ncorrN = corrN(Nrdm,Drdm)';
+                    
+                    % determine winning model (and if winning model is
+                    % true model)
+                    if m==1 % muscle model
+                        t.correctCorr  = t.mcorr > t.ncorr;
+                        t.correctCorrN = t.mcorrN > t.ncorrN;
+                        t.deviationN   = t.mcorrN-1;
+                        t.trueCorrN    = t.mcorrN;
+                    elseif m==2 % usage model
+                        t.correctCorr  = t.ncorr > t.mcorr;
+                        t.correctCorrN = t.ncorrN > t.mcorrN;
+                        t.deviationN   = t.ncorrN-1;
+                        t.trueCorrN    = t.ncorrN;
+                    end
+                    % add indexing fields
+                    t.numPairs  = ones(numIters,1).*j;
+                    t.pdistort  = ones(numIters,1).*d;
+                    t.trueModel = ones(numIters,1).*m;
+                    t.compLvl   = ones(numIters,1).*compLvl;
+                    %t.distortType = ones(numIters,1).*i;
+                    T = addstruct(T,t);
+                end
+            end
+        end
+        varargout = {T};
+    case 'FIG_distortionCurve'
+        % CAUTION: ALTERATION WILL MESS UP THE X-AXIS LABELS
+        disLevel = [0:0.05:0.6];
+        plotMean = 1;
+        D1 = fivedigitFreq3_imana('STATS_distortionCurve','compLvl','hard','disLevel',disLevel);
+        D1 = tapply(D1,{'pdistort','compLvl'},{'trueCorrN','mean'},{'correctCorrN','mean'},{'correctCorr','mean'});
+        D2 = fivedigitFreq3_imana('STATS_distortionCurve','compLvl','med','disLevel',disLevel);
+        D2 = tapply(D2,{'pdistort','compLvl'},{'trueCorrN','mean'},{'correctCorrN','mean'},{'correctCorr','mean'});
+        D = addstruct(D1,D2);
+        % avg. trueCorrN for same distortion lvl across comp difficulty so
+        % we can plot on same x-axis points
+        D.trueCorrN = repmat(mean([D.trueCorrN(D.compLvl==1) D.trueCorrN(D.compLvl==2)],2),[2,1]);
+
+        xlabs = {};
+        for i = 1:length(disLevel)
+            xlabs{end+1} = sprintf('%0.3f',mean(D.trueCorrN(D.pdistort==disLevel(i))));
+        end
+        
+        
+        %modelName = {'muscle','usage'};
+        % plot for each model in different figure
+%         for m=1:2
+            j = 1;
+            figure('Color',[1 1 1]);
+            % plot rdm correlations
+%             subplot(1,3,j);
+%             plt.box(D.pdistort,[D.mcorr,D.ncorr],'style',sty,'subset',D.trueModel==m);
+%             plt.labels('distortion level (%)','corr to true rdms',sprintf('%s model  .',modelName{m}));
+%             plt.set('xticklabel',{'','0','','0.1','','0.2','','0.3','','0.4','','0.5',...
+%                                    '','0.6','','0.7','','0.8','','0.9','','1'},'xticklabelrotation',45);
+%             plt.legend('northeast',modelName);
+%             ylim([0 1])
+%             j = j+1;
+%             % plot % correct model wins
+%             subplot(1,3,j);
+%             plt.box(D.pdistort,[D.mcorrN,D.ncorrN],'style',sty,'subset',D.trueModel==m);
+%             plt.labels('distortion level (%)','corrN to true rdms',sprintf('%s model  .',modelName{m}));
+%             plt.set('xticklabel',{'','0','','0.1','','0.2','','0.3','','0.4','','0.5',...
+%                                    '','0.6','','0.7','','0.8','','0.9','','1'},'xticklabelrotation',45);
+%             plt.legend('northeast',modelName);
+%             j = j+1;
+%             % plot % correct model wins
+%             subplot(1,3,j);
+            plt.line(-D.trueCorrN,[1-D.correctCorrN],'style',style.custom({'lightgray','darkgray'}),'split',D.compLvl);
+            plt.labels('distortion level (%)','confusion rate (%)');
+            plt.set('xticklabelrotation',45,'xtick',[-1:0.02:-0.84],'xticklabel',{'1','0.98','0.96','0.94','0.92','0.90','0.88','0.86','0.84'});
+            plt.legend('northeast',{'med','hard'});
+            xlim([-1,-0.86]);
+            ylim([0 0.35]);
+            
+            if plotMean
+                m1 = fivedigitFreq3_imana('BAYES_bf','roi',12,'glm',3,'freqPair',[2,3,5],'squareroot',0,'disLevel',[0]);
+                s1 = fivedigitFreq3_imana('BAYES_bf','roi',11,'glm',3,'freqPair',[2,3,5],'squareroot',0,'disLevel',[0]);
+                v1v2 = fivedigitFreq3_imana('BAYES_bf','roi',24,'glm',3,'freqPair',[5],'squareroot',0,'disLevel',[0]);
+                drawline(-m1.ratioN,'dir','vert','linestyle',':','color',[0 0.8 0]);
+                drawline(-s1.ratioN,'dir','vert','linestyle',':','color',[0 0 0]);
+                drawline(-v1v2.ratioN,'dir','vert','linestyle',':','color',[0.25 0.88 0.82]);
+            end
+            
+            %plt.match('y');
+%         end
+       %keyboard
+        
+    case 'depreciated_BAYES_rdmStability'    
+        % Simulates distorted rdms.
+        % Mixed 10% distortion to all 10 paired distances.
+        % Returns results in plotting-friendly data structure.
+        numIters = 1000; % per subject's data
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        vararginoptions(varargin,{'sn','glm','roi'});
+        
+        disLevel = 0.1; % 10% distortion level
+        
+        if length(roi)>1; error('only one roi for case.'); end
+        % load data
+        T = load(fullfile(regDir,sprintf('glm%d_reg_splithalf_Tspeed.mat',glm)));
+        if roi==16 | roi==34 % if visual cortices, avg. across hemispheres
+            T = getrow(T,T.region==16 | T.region==34);
+            T = tapply(T,{'SN','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        else
+            T = getrow(T,T.region==roi);
+        end
+        A = []; % across freqs
+        W = []; % within speeds
+        
+        pairIdx = rsa_squareRDM(1:6); % used for an indexing field (indicates the speed-pair number- 1:6)
+        for s = sn % for each subject
+            t = getrow(T,T.SN==s);
+            % correlate RDMs without distortion
+            R = corrN(t.RDM');
+            %R = corrN(ssqrt(t.RDM)');
+            % take correlations between partitions
+            R = R(1:4,5:8); % take off-diag square matrix (correlations between even-odd data splits)
+            for spd1 = 1:3
+                w1 = R(spd1,spd1);              % observed spd 1 corr- used for prediction
+                for spd2 = (spd1+1):4
+                    w2 = R(spd2,spd2);          % observed spd 2 corr- used for prediction
+                    b1 = R(spd1,spd2);          % corr b/t 1 & 2- used for observed
+                    b2 = R(spd2,spd1);          % corr b/t 1 & 2- used for observed
+                    % harvest cross-speed, cross-partition correlations
+                    b.pcorr     = ssqrt(w1*w2); % predicted corr- sqrt b/c geometric mean
+                    b.acorr     = ssqrt(b1*b2); % observed corr
+                    b.dev_corr  = b.acorr-b.pcorr;
+                    b.sn        = s;
+                    b.roi       = roi;
+                    b.freqPair = [spd1,spd2];
+                    b.pairIdx   = pairIdx(spd1,spd2);
+                    
+                    
+                    % % INCORRECT APPROACH (i think- SA)
+                    % now calculate distorted rdm distribution
+                    % First, distort [spd1 rdm, partition 1] and [spd1 rdm, partition 2]
+                    oRDM = [repmat(t.RDM(t.speed==spd2 & t.partition==2,:)',1,numIters), repmat(t.RDM(t.speed==spd2 & t.partition==1,:)',1,numIters)];
+                    sRDM = [repmat(t.RDM(t.speed==spd1 & t.partition==1,:)',1,numIters), repmat(t.RDM(t.speed==spd1 & t.partition==2,:)',1,numIters)];
+                    jidx  = sample_wor([1:10],10,numIters*2);                       % fingerpair(s) to distort
+                    jidx  = jidx + kron(ones(10,1),[0:10:numIters*10*2 - 10]);  % add values to correctly index by column-major order
+                    didx  = sample_wr([1,-1],10,numIters*2);
+                    sRDM(jidx) = sRDM(jidx) + (sRDM(jidx).*disLevel.*didx); % distort by add or subtracting some percentage 
+                    % correlate distored rdms with undistorted spd1 rdm
+                    Rd1 = diag(corrN(oRDM,sRDM));
+                    % Now distort [spd2 rdm, partition 1] and [spd2 rdm, partition 1]
+                    sRDM = [repmat(t.RDM(t.speed==spd2 & t.partition==2,:)',1,numIters), repmat(t.RDM(t.speed==spd2 & t.partition==1,:)',1,numIters)];
+                    oRDM = [repmat(t.RDM(t.speed==spd1 & t.partition==1,:)',1,numIters), repmat(t.RDM(t.speed==spd1 & t.partition==2,:)',1,numIters)];
+                    jidx  = sample_wor([1:10],10,numIters*2);                       % fingerpair(s) to distort
+                    jidx  = jidx + kron(ones(10,1),[0:10:numIters*10*2 - 10]);  % add values to correctly index by column-major order
+                    didx  = sample_wr([1,-1],10,numIters*2);
+                    sRDM(jidx) = sRDM(jidx) + (sRDM(jidx).*disLevel.*didx); % distort by add or subtracting some percentage 
+                    % correlate distored rdms with undistorted spd2 rdm
+                    Rd2 = diag(corrN(oRDM,sRDM));
+                    % avg. simulated distrotion correlations, then
+                    % geometric mean of the 
+                    b.dcorr  = ssqrt(mean(Rd1)*mean(Rd2));
+                    b.dsd    = std([Rd1;Rd2]);
+                    b.dev_dcorr = b.dcorr-b.pcorr;
+                    
+                    A = addstruct(A,b);
+                end
+            end
+        end;
+        b = [];
+        B = []; %plotting friendly structure
+        ii = ones(2,1);
+        for i = 1:length(A.sn)
+            b.corr    = [A.dev_corr(i);A.dev_dcorr(i)];
+            b.pairIdx = ii.*A.pairIdx(i);
+            b.sn      = ii.*A.sn(i);
+            b.roi     = ii.*A.roi(i);
+            b.type    = [1;2]; % 1=actual corr. deviation, 2=distorted corr deviation
+            B = addstruct(B,b);
+        end
+        
+        varargout = {A,B};
+    case 'depreciated_BAYES_rdmStabilityDist'    
+        % Simulates distorted rdms.
+        % Mixed 10% distortion to all 10 paired distances.
+        % Returns results in plotting-friendly data structure.
+        numIters = 1000; % per subject's data
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        disLevel = 0.1; % 10% distortion level
+        squareroot = 0; 
+        vararginoptions(varargin,{'sn','glm','roi','disLevel','squareroot'});
+        
+        if length(roi)>1; error('only one roi for case.'); end
+        % load data
+        %T = load(fullfile(regDir,sprintf('glm%d_reg_splithalf_Tspeed.mat',glm)));
+        T = load(fullfile(regDir,sprintf('glm%d_reg_Tspeed.mat',glm)));
+        T = getrow(T,T.layer==1);
+        if roi==16 | roi==34 % if visual cortices, avg. across hemispheres
+            T = getrow(T,T.region==16 | T.region==34);
+            T = tapply(T,{'SN','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        elseif roi==6 | roi==24 % if visual cortices, avg. across hemispheres
+            T = getrow(T,T.region==6 | T.region==24);
+            T = tapply(T,{'SN','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        else
+            T = getrow(T,T.region==roi);
+        end
+        B = [];
+        for s = sn % for each subject
+            t = getrow(T,T.SN==s);
+            for spd = 1:4
+                % Get rdms for this speed
+                rdm  = t.RDM(t.speed==spd,:)';
+                if squareroot
+                    rdm  = ssqrt(rdm);
+                end  
+                Drdm = repmat(rdm,1,numIters);
+                jidx = sample_wor([1:10],10,numIters);                   % fingerpair(s) to distort- distort all 10
+                jidx = jidx + kron(ones(10,1),[0:10:numIters*10 - 10]);  % add values to correctly index by column-major order
+                didx = sample_wr([1,-1],10,numIters);                    % randomly sample add/subtract. distortion for each iteration
+                Drdm(jidx) = Drdm(jidx) + (Drdm(jidx).*disLevel.*didx);  % do distortion
+                % correlate distored rdms with undistorted rdms
+                Rnd = corrN(rdm,Drdm);
+                Rd  = corr(rdm,Drdm);
+                % avg. simulated distrotion correlations
+                b.dcorrN     = mean(Rnd);
+                b.dcorr      = mean(Rd);
+                b.dsd        = std(Rnd);
+                b.deviationN = b.dcorrN-1;
+                b.deviation  = b.dcorr-1;
+                b.speed      = spd;
+                b.roi        = roi;
+                b.SN         = s;
+                B = addstruct(B,b);
+            end
+        end;
+        
+        varargout = {B};
+    case 'depreciated_PLOT_bayesDists_allPairs'   
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        squareroot = 0;
+        disLevel = [0.1,0.2,0.3]; % distortion levels
+        vararginoptions(varargin,{'sn','glm','roi','disLevel','type','squareroot'});
+        
+        numCols = length(disLevel)+1;
+        
+        A = fivedigitFreq3_imana('BAYES_rdmStabilityTrue','sn',sn,'roi',roi,'glm',glm,'squareroot',squareroot);   % get actual correlation deviations
+        
+        figure('Color',[1 1 1]);
+        % plot real data deviation histrograms, split by cross-freq. pair
+        subplot(2,numCols,1);
+        if strcmp(type,'corr')
+            plt.hist(A.deviation,'split',A.pairIdx,'style',style.custom(plt.helper.get_shades(6,'jet','decrease')));
+        elseif strcmp(type,'corrN')
+            plt.hist(A.deviationN,'split',A.pairIdx,'style',style.custom(plt.helper.get_shades(6,'jet','decrease')));
+        end
+        plt.labels('observed - predicted crossfreq. corr','count',sprintf('%s real data  .',regname{roi}));
+        plt.legend('northeast',{'crossfreq pair 1','pair 2','pair 3','pair 4','pair 5','pair 6'});
+        
+        j = 2; % subplot ticker
+        for i = 1:length(disLevel)
+            % distortion at this level
+            B = fivedigitFreq3_imana('BAYES_rdmStabilityDist','sn',sn,'roi',roi,'glm',glm,'disLevel',disLevel(i),'squareroot',squareroot);
+            % plot distorted histrgrams, split by frequency condition
+            subplot(2,numCols,j);
+            style.use('4speedsMarkers');
+            if strcmp(type,'corr')
+                plt.hist(B.deviation,'split',B.speed);
+            elseif strcmp(type,'corrN')
+                plt.hist(B.deviationN,'split',B.speed);
+            end
+            plt.labels('distorted - predicted reliability','count',sprintf('%1.2f percent distortion  .',disLevel(i)));
+            plt.legend('northeast',{'freq 1','freq 2','freq 3','freq 4'});
+
+            % plot deviation distributions, overlayed
+            subplot(2,numCols,j+numCols);
+            AB.SN        = [A.SN;B.SN];
+            AB.roi       = [A.roi;B.roi];
+            AB.type      = [ones(length(A.SN),1);ones(length(B.SN),1).*2];
+            if strcmp(type,'corr')
+                AB.deviation = [A.deviation;B.deviation];
+                plt.hist(AB.deviation,'split',AB.type,'style',style.custom({'black','lightgray'}));
+            elseif strcmp(type,'corrN')
+                AB.deviationN = [A.deviationN;B.deviationN];
+                plt.hist(AB.deviationN,'split',AB.type,'style',style.custom({'black','lightgray'}));
+            end
+            plt.labels('correlation deviations','count','overlayed distributions  .');
+            plt.legend('northeast',{'real data','distorted'});
+            j = j+1;
+        end
+        %keyboard
+    case 'depreciated_BAYES_bf_allPairs'
+        % Compute probability of true deviations from distribution of
+        % distorted deviations.
+        % Uses std of real data and mean of distorted deviations to compute
+        % prior probabilities.
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        squareroot = 0;
+        disLevel = [0,0.01,0.05,0.1,0.2,0.3]; % distortion levels
+        freqPair = [1:6]; % which cross-frequency pairs to include
+        vararginoptions(varargin,{'sn','glm','roi','disLevel','type','freqPair','squareroot'});
+        % get actual correlation deviations
+        A = fivedigitFreq3_imana('BAYES_rdmStabilityTrue','sn',sn,'roi',roi,'glm',glm,'squareroot',squareroot);
+        A = getrow(A,ismember(A.pairIdx,freqPair));
+        % calc std of deviation distributions
+        if strcmp(type,'corr');
+            sigmaA = std(A.deviation);
+        elseif strcmp(type,'corrN');
+            sigmaA = std(A.deviationN);
+        end
+        
+        D = [];
+        for i = 1:length(disLevel)
+            % distortion at this level
+            B = fivedigitFreq3_imana('BAYES_rdmStabilityDist','sn',sn,'roi',roi,'glm',glm,'disLevel',disLevel(i),'squareroot',squareroot); 
+            % calculate probabilities under alternative and null models
+            if strcmp(type,'corr');
+                d.meanD = mean(B.deviation);
+                pA = exp(-(-A.deviation).^2/(2*sigmaA^2));
+                pB = exp(-(-A.deviation-mean(B.deviation)).^2/(2*sigmaA^2));
+            elseif strcmp(type,'corrN');
+                d.meanD = mean(B.deviationN);
+                pA = exp(-(-A.deviationN).^2/(2*sigmaA^2));
+                pB = exp(-(-A.deviationN-mean(B.deviationN)).^2/(2*sigmaA^2));
+            end
+            d.pA = pA';
+            d.pB = pB';
+            d.bf = prod(pA)/prod(pB); % calcualte bayes factor
+            d.sigma = sigmaA;
+            d.disLevel = disLevel(i);
+            d.disNum = i; % for plotting 
+            d.roi = roi;
+            d.glm = glm;
+            d.type = type;
+            d.freqPair = freqPair;
+            D = addstruct(D,d);
+        end
+        varargout = {D};
+    case 'depreciated_PLOT_bayesBF_allPairs'
+        % Plots bayes factors for roi across increasing levels of distortion.
+        % Plots are split by cross-frequency pairs (1:6)
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        fig = [];
+        disLevel = [0,0.01,0.05,0.1,0.2,0.3]; % distortion levels
+        squareroot = 0; % take ssqrt of rdms or not
+        vararginoptions(varargin,{'sn','roi','disLevel','type','fig','squareroot'});
+        
+        % Loop through cross-frequency pairs, calculate BF, add to plotting
+        % friendly-structure
+        D = [];
+        for f = 1:6
+            d = fivedigitFreq3_imana('BAYES_bf_allPairs','type',type,'roi',roi,'glm',glm,'disLevel',disLevel,'freqPair',f,'squareroot',squareroot);
+            D = addstruct(D,d);
+        end
+        % plot
+        if isempty(fig); figure('Color',[1 1 1]); else; fig; end
+        sty = style.custom(plt.helper.get_shades(6,'jet','decrease'));
+        plt.line(D.disNum,D.bf,'split',D.freqPair,'style',sty);
+        xlabs = {};
+        for i = 1:length(disLevel)
+            xlabs{end+1} = sprintf('%0.2f',disLevel(i));
+        end
+        plt.set('xticklabel',xlabs,'xticklabelrotation',45);
+        plt.labels('distortion level (%)','log bayes factor',sprintf('%s %s   .',regname{roi},type));
+        plt.legend('northwest',{'freqPair 1','pair 2','pair 3','pair 4','pair 5','pair 6'});
+        
+        ylim([0.5 4]);
+        drawline(1,'dir','horz','color',[0.7 0 0]);
+        drawline(3,'dir','horz','color',[0.7 0 0],'linestyle',':');
+        
+        %keyboard
+        
+        varargout = {D};
+    case 'depreciated_PLOT_bayesDists'   
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        squareroot = 0;
+        disLevel = [0.1,0.2,0.3]; % distortion levels
+        freqPair = [2,3,5]; % which cross-frequency pairs to include
+        vararginoptions(varargin,{'sn','glm','roi','disLevel','type','squareroot'});
+        
+        numCols = length(disLevel)+1;
+        
+        A = fivedigitFreq3_imana('BAYES_rdmStabilityTrue','sn',sn,'roi',roi,'glm',glm,'squareroot',squareroot);   % get actual correlation deviations
+        A = getrow(A,ismember(A.pairIdx,freqPair)); % cross-frequency pairs to test
+        figure('Color',[1 1 1]);
+        % plot real data deviation histrograms, split by cross-freq. pair
+        subplot(2,numCols,1);
+        if strcmp(type,'corr')
+            plt.hist(A.deviation,'split',A.pairIdx,'style',style.custom(plt.helper.get_shades(6,'jet','decrease')));
+        elseif strcmp(type,'corrN')
+            plt.hist(A.deviationN,'split',A.pairIdx,'style',style.custom(plt.helper.get_shades(6,'jet','decrease')));
+        end
+        plt.labels('observed - predicted crossfreq. corr','count',sprintf('%s real data  .',regname{roi}));
+        plt.legend('northeast',{'crossfreq pair 1','pair 2','pair 3','pair 4','pair 5','pair 6'});
+        
+        j = 2; % subplot ticker
+        for i = 1:length(disLevel)
+            % distortion at this level
+            B = fivedigitFreq3_imana('BAYES_rdmStabilityDist','sn',sn,'roi',roi,'glm',glm,'disLevel',disLevel(i),'squareroot',squareroot);
+            % plot distorted histrgrams, split by frequency condition
+            subplot(2,numCols,j);
+            style.use('4speedsMarkers');
+            if strcmp(type,'corr')
+                plt.hist(B.deviation,'split',B.speed);
+            elseif strcmp(type,'corrN')
+                plt.hist(B.deviationN,'split',B.speed);
+            end
+            plt.labels('distorted - predicted reliability','count',sprintf('%1.2f percent distortion  .',disLevel(i)));
+            plt.legend('northeast',{'freq 1','freq 2','freq 3','freq 4'});
+
+            % plot deviation distributions, overlayed
+            subplot(2,numCols,j+numCols);
+            AB.SN        = [A.SN;B.SN];
+            AB.roi       = [A.roi;B.roi];
+            AB.type      = [ones(length(A.SN),1);ones(length(B.SN),1).*2];
+            if strcmp(type,'corr')
+                AB.deviation = [A.deviation;B.deviation];
+                plt.hist(AB.deviation,'split',AB.type,'style',style.custom({'black','lightgray'}));
+            elseif strcmp(type,'corrN')
+                AB.deviationN = [A.deviationN;B.deviationN];
+                plt.hist(AB.deviationN,'split',AB.type,'style',style.custom({'black','lightgray'}));
+            end
+            plt.labels('correlation deviations','count','overlayed distributions  .');
+            plt.legend('northeast',{'real data','distorted'});
+            j = j+1;
+        end
+        %keyboard
+    
+    case 'BAYES_rdmStabilityTrue'
+        % split-half correlations of RDM for each subject. 
+        % RDMs include all 20 conds.
+        % Dissimilarities are calculated for each partition with
+        % crossvalidation (distance_euclidean).
+        glm     = 3;
+        roi     = 12; % default primary motor cortex
+        sn      = 10:17;
+        squareroot = 0;
+        % Correlate patterns across even-odd run splits WITHIN subjects.
+        % Does correlation across all depths.
+        vararginoptions(varargin,{'roi','glm','sn','squareroot'});
+        
+        T = load(fullfile(regDir,sprintf('glm%d_reg_splithalf_Tspeed.mat',glm)));
+        
+        if roi==16 | roi==34 % if visual cortices, avg. across hemispheres
+            T = getrow(T,T.region==16 | T.region==34);
+            T = tapply(T,{'SN','partition','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        elseif roi==6 | roi==24 % if visual cortices, avg. across hemispheres
+            T = getrow(T,T.region==6 | T.region==24);
+            T = tapply(T,{'SN','partition','speed'},{'RDM','mean'}); % don't touch this- it keeps rows in the same order compared to other rois!
+        else
+            T = getrow(T,T.region==roi);
+        end
+        A = []; % across speeds
+        
+        pairIdx = rsa_squareRDM(1:6); % used for an indexing field (indicates the speed-pair number- 1:6)
+        for s = sn % for each subject
+            t = getrow(T,T.SN==s);
+            % correlate splithalf RDMs
+            if squareroot
+                Rn = corrN(ssqrt(t.RDM)');
+                R  = corr(ssqrt(t.RDM)');
+            else
+                Rn = corrN(t.RDM');
+                R  = corr(t.RDM');
+            end
+            % take correlations between partitions
+            Rn = Rn(1:4,5:8); % take off-diag square matrix (correlations between even-odd data splits)
+            R  = R(1:4,5:8); % take off-diag square matrix (correlations between even-odd data splits)
+            for spd1 = 1:3
+                w1n = Rn(spd1,spd1);              % observed spd 1 corr- used for prediction
+                w1  = R(spd1,spd1);             
+                for spd2 = (spd1+1):4
+                    w2n = Rn(spd2,spd2);          % observed spd 2 corr- used for prediction
+                    b1n = Rn(spd1,spd2);          % corr b/t 1 & 2- used for observed
+                    b2n = Rn(spd2,spd1);          % corr b/t 1 & 2- used for observed
+                    w2  = R(spd2,spd2);         
+                    b1  = R(spd1,spd2);          
+                    b2  = R(spd2,spd1);         
+                    % harvest cross-speed, cross-partition correlations
+                    b.pcorrN    = ssqrt(w1n*w2n); % predicted corr- sqrt b/c geometric mean
+                    b.acorrN    = ssqrt(b1n*b2n); % observed corr
+                    b.pcorr     = ssqrt(w1*w2);
+                    b.acorr     = ssqrt(b1*b2);
+                    % calculate deviations
+                    b.deviationN = b.acorrN - b.pcorrN; % Actual - Predicted speed pair correlation 
+                    b.deviation  = b.acorr - b.pcorr;
+                    % add indexing fields
+                    b.SN        = s;
+                    b.roi       = roi;
+                    b.speedpair = [spd1,spd2];
+                    b.pairIdx   = pairIdx(spd1,spd2);
+                    A = addstruct(A,b);
+                end
+            end
+        end;
+        % done stability analysis..
+        varargout = {A};
+    case 'BAYES_bf'
+        % Compute probability of true deviations from distribution of
+        % distorted deviations.
+        % Uses std of real data and mean of distorted deviations to compute
+        % prior probabilities.
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        squareroot = 0;
+        disLevel = [0,0.01,0.05,0.1,0.2,0.3]; % distortion levels
+        freqPair = [2,3,5]; % which cross-frequency pairs to include
+        vararginoptions(varargin,{'sn','glm','roi','disLevel','type','freqPair','squareroot'});
+        % get actual correlation deviations
+        %A = fivedigitFreq3_imana('BAYES_rdmStabilityTrue','sn',sn,'roi',roi,'glm',glm,'squareroot',squareroot);
+        A = fivedigitFreq3_imana('HARVEST_rdmStability','sn',sn,'roi',roi,'glm',glm,'type','pearson');
+        A = getrow(A,ismember(A.pairIdx,freqPair));
+        %A.ratioN = A.deviationN./A.pcorrN; % calculate ratio of deviation given noise ceiling
+        % avg. deviations for each subject across cross-freq pairs
+        A = tapply(A,{'SN','roi'},{'deviationN','mean'},{'ratioNdev','mean'},{'ratioNscl','mean'},{'ratioNsclAvg','mean'});
+        % calc std of deviation distributions
+        if strcmp(type,'corr');
+            sdA = std(A.deviation);
+        elseif strcmp(type,'corrN');
+            %sdA = std(A.ratioNdev);
+            sdA = std(A.ratioNscl);
+            %sdA = std(A.ratioNsclAvg);
+        end
+        
+        D = [];
+        % get distortion distribution means
+        B = fivedigitFreq3_imana('STATS_distortionCurve','disLevel',disLevel);
+        B = tapply(B,{'pdistort'},{'deviationN','mean'},{'trueCorrN','mean'});
+        for i = 1:length(disLevel)
+            b = getrow(B,B.pdistort==disLevel(i));
+            % distortion at this level for each subject's data
+            %b = fivedigitFreq3_imana('BAYES_rdmStabilityDist','sn',sn,'roi',roi,'glm',glm,'disLevel',disLevel(i),'squareroot',squareroot); 
+            %b = tapply(b,{'SN','roi'},{'deviationN','mean'},{'deviation','mean'});
+            % calculate probabilities under alternative and null models
+            if strcmp(type,'corr');
+                error('corr not supported. Support only for corrN.')
+                %d.meanD = mean(B.deviation);
+                %pA = exp(-(A.deviation).^2/(2*sdA^2));
+                %pB = exp(-(A.deviation - b.deviation).^2/(2*sdA^2));  % prob under distortion
+            elseif strcmp(type,'corrN');
+                 %d.meanD = b.deviationN;
+                 %d.ratioN = mean(A.ratioNdev);
+                 %pA = exp(-(A.ratioNdev).^2/(2*sdA^2));                % prob under null
+                 %pB = exp(-(A.ratioNdev - b.deviationN).^2/(2*sdA^2)); % prob under distortion
+                 
+                 pA = normpdf(A.ratioNscl,1,sdA);  % to check work
+                 pB = normpdf(A.ratioNscl,b.trueCorrN,sdA);
+                 
+                 d.meanD = b.trueCorrN;
+                 d.ratioN = mean(A.ratioNscl);
+                 %pA = exp(-(A.ratioNscl-1).^2/(2*sdA^2));                % prob under null
+                 %pB = exp(-(A.ratioNscl - b.trueCorrN).^2/(2*sdA^2)); % prob under distortion
+            end
+            d.numSubj = length(sn);
+            d.bfnull    = prod(pA)/prod(pB); % calculate bayes factor
+            d.bfalt     = prod(pB)/prod(pA); % calculate bayes factor
+            d.logbfnull = sum(log(pA)) - sum(log(pB)); % logBF of alt models is the inverse.
+            d.KRlogbfnull = sum(2*log(pA)) - sum(2*log(pB)); % calculate the Kass & Raftery (1995) BF = 2*log(B) scale
+           % d.logbfalt  = sum(log(pB)) - sum(log(pA));
+            d.sdA = sdA;
+            d.disLevel = disLevel(i);
+            d.disNum = i; % for plotting 
+            d.roi = roi;
+            d.glm = glm;
+            d.type = type;
+            %d.freqPair = freqPair;
+            D = addstruct(D,d);
+        end
+        varargout = {D};
+    case 'depreciated_PLOT_bayesBF_singleROI'
+        % Plots bayes factors for roi across increasing levels of distortion.
+        % Plots are for BF pooled across freqPairs 2,3,& 5 for one roi.
+        sn = 10:17;
+        glm = 3;
+        roi = [12];
+        type = 'corrN'; % or 'corr'
+        fig = [];
+        disLevel = [0:0.05:0.25]; % distortion levels
+        squareroot = 0; % don't take ssqrt of rdms
+        vararginoptions(varargin,{'sn','roi','disLevel','type','fig','squareroot'});
+        
+        % Calculate BF across pairs (group-BF test)
+        D = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',roi,'glm',glm,'disLevel',disLevel,'freqPair',[2,3,5],'squareroot',squareroot,'sn',sn);
+
+        % plot
+        if isempty(fig); figure('Color',[1 1 1]); else; fig; end
+        sty = style.custom(plt.helper.get_shades(6,'jet','decrease'));
+        plt.line(D.disNum,D.logbfnull,'style',sty);
+        xlabs = {};
+        for i = 1:length(disLevel)
+            xlabs{end+1} = sprintf('%0.2f',disLevel(i));
+        end
+        plt.set('xticklabel',xlabs,'xticklabelrotation',45);
+        plt.labels('noise level','log bayes factor',sprintf('%s %s   .',regname{roi},type));
+        
+        %ylim([0.5 4]);
+        drawline(log(1),'dir','horz','color',[0.7 0 0]);
+        drawline(log(3),'dir','horz','color',[0.7 0 0],'linestyle',':');
+        
+        %keyboard
+        
+        varargout = {D};
+    case 'PLOT_bayesBF_multiROI'
+        % Plots bayes factors for roi across increasing levels of distortion.
+        % Plots the raw bayes factor for statistical interpretations.
+        % Plots are split by cross-frequency pairs (1:6)
+        sn = 10:17;
+        glm = 3;
+        roi = [11,12,24];
+        type = 'corrN'; % or 'corr' DON'T CHANGE
+        fig = [];
+        disLevel = [0:0.05:0.6]; % distortion levels
+        squareroot = 0; % don't take ssqrt of rdms DON'T CHANGE
+        vararginoptions(varargin,{'disLevel','fig'});
+        
+        D = [];
+        for r = roi
+            % Calculate BF across pairs (group-BF test)
+            d = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',r,'glm',glm,'disLevel',disLevel,'freqPair',[2,3,5],'squareroot',squareroot,'sn',sn);
+            if r==16 | r==24
+                d = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',r,'glm',glm,'disLevel',disLevel,'freqPair',[5],'squareroot',squareroot,'sn',sn);
+                d.roi = ones(size(d.roi)).*16;
+            end
+            D = addstruct(D,d);
+        end
+        % plot styling
+        xlabs1 = {};
+        xlabs2 = xlabs1;
+        for i = 1:length(disLevel)
+            xlabs1{end+1} = sprintf('%0.2f',disLevel(i));
+            xlabs2{end+1} = sprintf('%0.3f',mean(D.meanD(D.disLevel==disLevel(i))));
+            D.meanD(D.disLevel==disLevel(i)) = mean(D.meanD(D.disLevel==disLevel(i)));
+        end
+        % plot
+        if isempty(fig); figure('Color',[1 1 1]); else; fig; end
+        sty = style.custom({[0 0 0],[0 0.75 0],[0.3 0.8 0.8]});
+        sty.general.markersize = 4;
+        hold on;
+        xlim([-1,-0.86]);
+        % add evidence cutoff lines according to Kass & Raftery 1995
+        drawline(0,'dir','horz','color',[0.7 0 0]);
+        drawline(1,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 1 ~ BF of 3
+        drawline(3,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 3 ~ BF of 20
+        drawline(-1,'dir','horz','color',[0.7 0 0],'linestyle',':');
+        % plot the log(BF)
+        plt.line(-D.meanD,D.bfnull,'split',D.roi,'style',sty);
+        plt.set('xtick',[-1:0.02:-0.84],'xticklabel',{'1','0.98','0.96','0.94','0.92','0.90','0.88','0.86','0.84'},'xticklabelrotation',45);
+        %plt.set('ytick',[-6:2:12],'yticklabel',{'20','8','3','0','3','8','20','55','150','400'});
+        %ylim([-6 12]);
+        xlim([-1,-0.86]);
+        
+        %plt.set('xticklabel',xlabs2,'xticklabelrotation',45);
+        plt.labels('rescaled cross-freq corrN','bayes factor','RDM stability');
+        plt.legend('northwest',{'S1','M1','V1/V2'});
+        varargout = {D};    
+    case 'Fig_BF'
+        % Plots bayes factors for roi across increasing levels of distortion.
+        % Plots are split by rois.
+        % plotting is done by switching signs (from pos to
+        % negative) for stylistic purposes.
+        sn   = 10:17;%[10,12:17];
+        glm  = 3;
+        roi  = [11,12,24];
+        type = 'corrN'; % or 'corr' DON'T CHANGE
+        fig  = [];
+        disLevel = [0:0.01:0.6]; % distortion levels
+        squareroot = 0; % don't take ssqrt of rdms DON'T CHANGE
+        vararginoptions(varargin,{'disLevel','fig'});
+        
+        D = [];
+        for r = roi
+            % Calculate BF across pairs (group-BF test)
+            d = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',r,'glm',glm,'disLevel',disLevel,'freqPair',[2,3,5],'squareroot',squareroot,'sn',sn);
+            if r==16 | r==24
+                d = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',r,'glm',glm,'disLevel',disLevel,'freqPair',[5],'squareroot',squareroot,'sn',sn);
+                d.roi = ones(size(d.roi)).*16;
+            end
+            D = addstruct(D,d);
+        end
+        % plot styling
+        xlabs1 = {};
+        xlabs2 = xlabs1;
+        for i = 1:length(disLevel)
+            xlabs1{end+1} = sprintf('%0.2f',disLevel(i));
+            xlabs2{end+1} = sprintf('%0.3f',mean(D.meanD(D.disLevel==disLevel(i))));
+            D.meanD(D.disLevel==disLevel(i)) = mean(D.meanD(D.disLevel==disLevel(i)));
+        end
+        % plot
+        if isempty(fig); figure('Color',[1 1 1]); else; fig; end
+        sty = style.custom({[0 0 0],[0 0.75 0],[0.3 0.8 0.8]});
+        sty.general.markersize = 4;
+        hold on;
+        xlim([-1,-0.86]);
+        % add evidence cutoff lines according to Kass & Raftery 1995
+        drawline(0,'dir','horz','color',[0.7 0 0]);
+        drawline(2,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 1 ~ BF of 3
+        drawline(6,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 3 ~ BF of 20
+        drawline(-2,'dir','horz','color',[0.7 0 0],'linestyle',':');
+        % plot the Kass & Raftery (1995) 2*log(B) scale, then re-write
+        % ylabels according to real log values
+        plt.line(-D.meanD,D.KRlogbfnull,'split',D.roi,'style',sty);
+        plt.set('xtick',[-1:0.02:-0.84],'xticklabel',{'1','0.98','0.96','0.94','0.92','0.90','0.88','0.86','0.84'},'xticklabelrotation',45);
+        plt.set('ytick',[-6:2:12],'yticklabel',{'20','8','3','0','3','8','20','55','150','400'});
+        ylim([-6 12]);
+        xlim([-1,-0.86]);
+        
+        %plt.set('xticklabel',xlabs2,'xticklabelrotation',45);
+        plt.labels('rescaled cross-freq corrN','bayes factor','RDM stability');
+        plt.legend('northwest',{'S1','M1','V1/V2'});
+        varargout = {D};    
+    case 'Fig_BFvsActivityDifference'
+        % Plots bayes factors for one roi.
+        % Plots are split by differences in frequency (and thus activity).
+        % splits: 3 fq. diff (1:4), 2 fq. diff (1:3,2:4), 1 fq. diff (1:2,2:3,3:4)
+        % plotting is done by switching signs (from pos to
+        % negative) for stylistic purposes.
+        
+        sn   = 10:17;%[10,12:17];
+        glm  = 3;
+        roi  = 12;
+        type = 'corrN'; % or 'corr' DON'T CHANGE
+        fig  = [];
+        disLevel = [0:0.01:0.6]; % distortion levels
+        squareroot = 0; % don't take ssqrt of rdms DON'T CHANGE
+        plotMean = 1;
+        vararginoptions(varargin,{'disLevel','fig','roi','plotMean'});
+        
+        if length(roi)>1; error('too many rois for case. only 1, please.'); end
+        
+        D = [];
+        pairs = {[3],[2,5],[1,4,6]};
+        for i = 1:3
+            % Calculate BF across pairs (group-BF test)
+            d = fivedigitFreq3_imana('BAYES_bf','type',type,'roi',roi,'glm',glm,'disLevel',disLevel,'freqPair',pairs{i},'squareroot',squareroot,'sn',sn);
+            d.split = ones(size(d.roi)).*i;
+            D = addstruct(D,d);
+        end
+        % plot styling
+        xlabs1 = {};
+        xlabs2 = xlabs1;
+        for i = 1:length(disLevel)
+            xlabs1{end+1} = sprintf('%0.2f',disLevel(i));
+            xlabs2{end+1} = sprintf('%0.3f',mean(D.meanD(D.disLevel==disLevel(i))));
+            D.meanD(D.disLevel==disLevel(i)) = mean(D.meanD(D.disLevel==disLevel(i)));
+        end
+        % plot
+        if isempty(fig); figure('Color',[1 1 1]); else; fig; end
+        %sty = style.custom({[0 0 0],[0 0.75 0],[0.3 0.8 0.8]});
+        clrs = {[0.6 0.6 0.6],[0.3 0.3 0.3],[0 0 0]};
+        sty = style.custom(clrs);
+        sty.general.markersize = 4;
+        hold on;
+        xlim([-1,-0.86]);
+        % add evidence cutoff lines according to Kass & Raftery 1995
+        drawline(0,'dir','horz','color',[0.7 0 0]);
+        drawline(2,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 1 ~ BF of 3
+        drawline(6,'dir','horz','color',[0.7 0 0],'linestyle',':');  % log BF of 3 ~ BF of 20
+        drawline(-2,'dir','horz','color',[0.7 0 0],'linestyle',':');
+        drawline(-6,'dir','horz','color',[0.7 0 0],'linestyle',':');
+        % plot the Kass & Raftery (1995) 2*log(B) scale, then re-write
+        % ylabels according to real log values
+        plt.line(-D.meanD,D.KRlogbfnull,'split',D.split,'style',sty);
+        plt.set('xtick',[-1:0.02:-0.84],'xticklabel',{'1','0.98','0.96','0.94','0.92','0.90','0.88','0.86','0.84'},'xticklabelrotation',45);
+        plt.set('ytick',[-12:2:12],'yticklabel',{'400','150','55','20','8','3','0','3','8','20','55','150','400'});
+        ylim([-12 12]);
+        xlim([-1,-0.86]);
+        
+        %plt.set('xticklabel',xlabs2,'xticklabelrotation',45);
+        plt.labels('rescaled cross-freq corrN','bayes factor',sprintf('%s RDM stability',reg_title{roi}));
+        plt.legend('southeast',{'3 freq diff','2 freq diff','1 freq diff'});
+        
+        if plotMean
+            for i =1:3
+                plot(-mean(D.ratioN(D.split==i)),-6,'d','Color',clrs{i});
+            end
+        end
+        
+        varargout = {D};    
+    case 'Fig_BFvsActMultiROI'
+        roi = [12,11,24];
+        disLevel = [0:0.01:0.9];
+        figure('Color',[1 1 1]);
+        D = [];
+        for i = 1:3
+            subplot(1,3,i);
+            d = fivedigitFreq3_imana('Fig_BFvsActivityDifference','roi',roi(i),'fig',gca,'disLevel',disLevel);
+            D = addstruct(D,d);
+        end
+        varargout = {D};
         
     case '0' % ------------ NeuroImage PCM Paper- PCM, Figure, and Stats cases
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -       
@@ -2719,6 +3869,7 @@ switch(what)
         vararginoptions(varargin,{'roi','glm','sn','layer'});
         % change current path to appropriate PCM toolbox version
         % addpath('/Users/sarbuckle/Documents/MotorControl/matlab/pcm_toolbox-master');
+        if length(roi)>1; error('PCM case only fits one roi at a time.'); end
         
         switch layer
             case 'all'
@@ -2763,6 +3914,7 @@ switch(what)
         % Null model- all distances equal
         M{1}.type       = 'nonlinear'; 
         M{1}.modelpred  = @fdf2_modelpred_null;
+        M{1}.fitAlgorithm = 'minimize'; 
         M{1}.numGparams = 1;
         M{1}.theta0     = 0.3;
         M{1}.name       = 'Null';
@@ -2771,6 +3923,7 @@ switch(what)
         % on movement force
         M{2}.type       = 'nonlinear'; 
         M{2}.modelpred  = @fdf2_modelpred_scale;
+        M{2}.fitAlgorithm = 'minimize'; 
         M{2}.numGparams = 17;
         M{2}.theta0     = [Fx0;scale_vals];   % Scale values
         M{2}.name       = 'Scaling';
@@ -2779,6 +3932,7 @@ switch(what)
         % pattern) that scales with pressing frequency/BOLD activity
         M{3}.type       = 'nonlinear'; 
         M{3}.modelpred  = @fdf2_modelpred_add;
+        M{3}.fitAlgorithm = 'minimize'; 
         M{3}.numGparams = 17;
         M{3}.theta0     = [Fx0;add_vals];   % Scale values
         M{3}.name       = 'Additive';
@@ -2786,15 +3940,16 @@ switch(what)
         % Additive independent + Scaling model combo
         M{4}.type       = 'nonlinear'; 
         M{4}.modelpred  = @fdf2_modelpred_addsc;
+        M{4}.fitAlgorithm = 'minimize'; 
         M{4}.numGparams = 20;
         M{4}.theta0     = [Fx0;scale_vals;add_vals];   % Scale values
         M{4}.name       = 'Combination';
         
         % Naive averaring model- noise ceiling method 1- totall free model
-        M{5}.type       = 'noiseceiling';         
-        M{5}.numGparams = 0;
-        M{5}.theta0     = [];
+        M{5}.type       = 'freechol';  
+        M{5}.numCond    = 20;
         M{5}.name       = 'noiseceiling';
+        M{5}            = pcm_prepFreeModel(M{5});
         
         [Ti,theta_hat_nocv,G_pred] = pcm_fitModelGroup(Y,M,partitionVec,conditionVec,'isCheckDeriv',0);
         [Tg,theta_hat_cv,G_predCV] = pcm_fitModelGroupCrossval(Y,M,partitionVec,conditionVec,'isCheckDeriv',0);
@@ -2989,141 +4144,46 @@ switch(what)
     case 'FIG_behaviour'                                                    % plot # of presses, avg. force, and avg. time between presses across subjects
     % harvest pressing force data for each trial
         sn       = 10:17;
-        figcolor = 'white';
-        vararginoptions(varargin,{'sn','figcolor'});
-        switch figcolor
-            case 'black'
-                bkclr = [0 0 0];
-                axclr = [1 1 1];
-                color = {axclr [0.5 0 0] [0.9 0 0] [1 0.6 0]};
-            case 'white'
-                bkclr = [1 1 1];
-                axclr = [0 0 0];
-                color = {axclr [0.5 0 0] [0.9 0 0] [1 0.6 0]};
-        end
+        vararginoptions(varargin,{'sn'});
         
         T = [];
         for s = sn;
             load(fullfile(behavDir,sprintf('fdf3_forces_s%02d.mat',s)));
-            %D = fivedigitFreq3_imana('BEHA_getBehaviour','sn',s);
-            for sp=1:4 % for each speed
-                dd = getrow(D,D.numPresses==2^sp);
-                for dgt=1:5 % for each digit
-                    d             = getrow(dd,dd.digit==dgt);
-                    t.SN          = s;
-                    t.digit       = dgt;
-                    t.speed       = sp;
-                    t.goodPresses = mean(d.numPeaks); % uses numPeaks so that you can lower force threshold required to count as correct press
-                    t.stdPresses  = std(d.numPeaks);
-                    t.avgF        = nanmean(d.avrgPeakHeight(d.digit==dgt));%d.forces(repmat([1:5],size(d.digit,1),1)~=repmat(d.digit,1,5))); % avg force of noncued fingers
-                    t.std         = nanstd(d.avrgPeakHeight(d.digit==dgt));%d.forces(repmat([1:5],size(d.digit,1),1)~=repmat(d.digit,1,5)));
-                    t.timebtpress = nanmean(d.avgTimeBTPeaks);
-                    T             = addstruct(T,t);
-                end
-            end
-        end
-
-        % Plot avg. number of presses per speed per finger
-        num_subjs = (length(unique(T.SN)));
-        figure('Color',bkclr,'Position',[2 235 500 250]); 
-        subplot(1,2,1);
-        hold on
-        for spd = 1:4
-            tt      = getrow(T,T.speed==spd);
-            presses = reshape(tt.goodPresses,num_subjs,5);
-            traceplot_sa((1:5),presses./6,'linecolor',color{spd},...
-                                    'patchcolor',color{spd},...
-                                    'errorfcn','stderr');
-        end
-        ax = gca;
-        xlabel('Finger','Color',axclr);
-        %ylabel('Number of Presses','Color',axclr);
-        ylabel('Pressing Frequency','Color',axclr);
-        xlim([0.5,5.5]);
-        ylim([0,17]);
-        set(gca,'XTick',[1:5]);
-        ax.Color    = bkclr;
-        ax.XColor   = axclr;
-        ax.YColor   = axclr;
-        %ax.FontSize = 16;
-        hold off
-        % Plot avg. force per speed per finger
-        subplot(1,2,2); 
-        hold on
-        for spd = 1:4
-            tt      = getrow(T,T.speed==spd);
-            presses = reshape(tt.avgF,num_subjs,5);
-            traceplot_sa((1:5),presses,'linecolor',color{spd},...
-                                    'patchcolor',color{spd},...
-                                    'errorfcn','stderr');
-        end
-        ax = gca;
-        if length(sn)~=1
-            legend(ax.Children(8:-2:2),{'0.3Hz','0.6Hz','1.3Hz','2.6Hz'});
-        end
-        xlabel('Finger','Color',axclr);
-        ylabel('Avgerage Force (N)','Color',axclr);
-        xlim([0.5,5.5]);
-        ylim([0,6]);
-        set(gca,'XTick',[1:5]);
-        ax.Color    = bkclr;
-        ax.XColor   = axclr;
-        ax.YColor   = axclr;
-        %ax.FontSize = 16;
-        hold off
+            D.sn = ones(length(D.BN),1).*s;
+            T = addstruct(T,D);
+        end     
+        T = tapply(T,{'digit','sn','numPresses'},...
+            {'goodPresses','nanmean(x)'},...
+            {'avrgPeakHeight','nanmean(x)'},...
+            {'avgTimeBTPeaks','nanmean(x)'});    
+         
+        % convert numpresses to pressing frequencies
+        T.cuedFreq = T.numPresses./6;    % 6sec is pressing phase
+        T.behaFreq = T.goodPresses./6;
         
-        
-        % Plot avg. time b/t presses (for each finger at each speed)
-%         subplot(1,3,3); 
-%         hold on
-%         for spd = 1:4
-%             tt      = getrow(T,T.speed==spd);
-%             presses = reshape(tt.timebtpress,num_subjs,5);
-%             traceplot_sa((1:5),presses,'linecolor',color{spd},...
-%                                     'patchcolor',color{spd},...
-%                                     'errorfcn','stderr');
-%         end
-%         ax = gca;
-%         xlabel('Finger','Color',axclr);
-%         ylabel('Avgerage Time between Presses (ms)','Color',axclr);
-%         xlim([0.5,5.5]);
-%         %ylim([0,6]);
-%         set(gca,'XTick',[1:5]);
-%         ax.Color    = bkclr;
-%         ax.XColor   = axclr;
-%         ax.YColor   = axclr;
-%         %ax.FontSize = 16;
-%         hold off
-        %keyboard
+        % now plot
+        style.use('4speedsMarkers');
+        figure('Color',[1 1 1]);
+        % plot pressing frequency
+        subplot(1,3,1);
+        plt.line(T.digit,T.behaFreq,'split',T.cuedFreq);
+        ylim([0 3]);
+        plt.legend('north',{'0.3Hz','0.6Hz','1.3Hz','2.6Hz'});
+        plt.labels('digit','pressing freq. (Hz)');
+        % plot digit forces
+        subplot(1,3,2);
+        plt.line(T.digit,T.avrgPeakHeight,'split',T.cuedFreq);
+        ylim([2 4]);
+        plt.legend('north',{'0.3Hz','0.6Hz','1.3Hz','2.6Hz'});
+        plt.labels('digit','pressing force (N)');
+        % plot time b/t presses
+        subplot(1,3,3);
+        plt.line(T.digit,T.avgTimeBTPeaks,'split',T.cuedFreq);
+        plt.legend('north',{'0.3Hz','0.6Hz','1.3Hz','2.6Hz'});
+        plt.labels('digit','time between presses (ms)');
+       
         % Stats
-        % anovaMixed(T.avgF,T.SN,'within',[T.digit,T.speed],{'digit','speed'})
-        
-        % Plot avg. scaling factor for number of presses b/t speeds
-%         subplot(1,3,3);
-%         hold on
-%         for spd = 2:4
-%             tt       = getrow(T,T.speed==spd);
-%             pt       = getrow(T,T.speed==(spd-1));
-%             presses  = reshape(tt.goodPresses,num_subjs,5);
-%             ppresses = reshape(pt.goodPresses,num_subjs,5);
-%             Pscaling = presses./ppresses; 
-%             scaling(:,:,spd-1) = Pscaling;
-%             traceplot_sa((1:5),Pscaling,'linecolor',color{spd},...
-%                                     'patchcolor',color{spd},...
-%                                     'errorfcn','stderr');
-%         end
-%         ax = gca;
-%         xlabel('Finger','Color',axclr);
-%         ylabel('# Presses Scaling Factor','Color',axclr);
-%         xlim([0.5,5.5]);
-%         ylim([0,3]);
-%         set(gca,'XTick',[1:5]);
-%         ax.Color    = bkclr;
-%         ax.XColor   = axclr;
-%         ax.YColor   = axclr;
-%         %ax.FontSize = 16;
-%         hold off
-        
+        % anovaMixed(T.avrgPeakHeight,T.SN,'within',[T.digit,T.cuedFreq],{'digit','freq'})
         %keyboard         
     case 'FIG_ROIstats'                                                     % plot avg (adjusted) activity and avg sqrt(LDC) for rois  
         % plots average distances and activities for specified rois
@@ -3159,7 +4219,7 @@ switch(what)
         % harvest activities into NumSubj x NumSpeeds matrix
         R_act = [];
         R_ldc = [];
-        split = [];
+       % split = [];
         speed = [];
         for r=1:length(roi)
             if ~roi(r)==16 % if V12, avg. across hemis
@@ -3173,7 +4233,7 @@ switch(what)
                 R_act(end+1,:) = d.act';                % harvest avg activity
                 R_ldc(end+1,:) = mean(ssqrt(d.RDM),2)'; % harvest avg sqrt LDC
                 %R_ldc(end+1,:) = mean((d.RDM),2)';
-                split(end+1,1) = r;                     % make split vector
+                %split(end+1,1) = r;                     % make split vector
                 speed(end+1,:) = d.speed;
             end
             leg{r} = reg_title{roi(r)};                 % update legend array  
@@ -3220,7 +4280,7 @@ switch(what)
         % Finally, plots within-condition correlations. Shaded region
         % reflects stderr across subjects.
         glm = 3;
-        roi = 12; % default primary motor cortex
+        roi = 11; % default primary motor cortex
         sn  = 10:17;
         fig = [];
         remove_mean = 1; % subtract 
@@ -3315,7 +4375,9 @@ switch(what)
         glm   = 3;
         layer = 1;      % select the voxel depth for which the RDM will be plotted
         speed = 3;      % select the speed condition for which the RDM will be plotted
-        vararginoptions(varargin,{'roi','glm','sn','layer','errorfcn','speed'});
+        fig   = [];
+        clrlim= [];
+        vararginoptions(varargin,{'roi','glm','sn','layer','errorfcn','speed','fig','clrlim'});
         
         % load data
         D = load(fullfile(regDir,sprintf('glm%d_reg_Tspeed.mat',glm)));
@@ -3330,37 +4392,150 @@ switch(what)
         D = T; clear T;
         
         % set upper colorscale limit across rois (if >1 roi)
-        roi_max = [];
-        for r = roi
-            d = getrow(D,D.region==r);
-            roi_max(end+1) = max(max(mean(ssqrt(d.RDM,1))));
-        end
-        cmax = max(roi_max); 
+%         roi_max = [];
+%         for r = roi
+%             d = getrow(D,D.region==r);
+%             roi_max(end+1) = max(max(mean(ssqrt(d.RDM,1))));
+%         end
+%         cmax = max(roi_max); 
         
         % loop through ROIs & plot subplot RDM for each roi
-        figure('Color',[1 1 1],'Name',['speed ' num2str(speed)]);
+        if isempty(fig)
+            figure('Color',[1 1 1],'Name',['speed ' num2str(speed)]);
+        else
+            fig;
+        end
         color = get(gcf,'Color');
         for i = 1:length(roi)
             r = roi(i);
-            d = getrow(D,D.region==r);
+            if roi==6 | roi==24 
+                d = getrow(D,D.region==6 | D.region==24);
+                d = tapply(D,{'SN','speed'},{'RDM','mean'});
+            else
+                d = getrow(D,D.region==r);
+            end
+            % rescale distances to max dist per subj
+            d.RDM = bsxfun(@rdivide,d.RDM,max(d.RDM,[],2));
             % plot
-            subplot(length(roi),1,i);
+            %subplot(length(roi),1,i);
             %imagesc(tril(rsa_squareRDM(mean(d.RDM,1))));%,[0 cmax]);
             idx = tril(ones(5));
-            l_RDM = tril(rsa_squareRDM(mean(ssqrt(d.RDM),1)));
+            %l_RDM = tril(rsa_squareRDM(mean(ssqrt(d.RDM),1)));
+            l_RDM = tril(rsa_squareRDM(mean(d.RDM,1)));
             l_RDM(idx==0) = nan;
-            patchimg(l_RDM);
-            colormap bone
+            patchimg(l_RDM,'scale',clrlim);
+            %colormap bone
+            %colormap hot
             title(reg_title{r});
             xlim([0 5]);
             ylim([0 5]);
             %axis equal
             
             ax = get(gca);
-            set(gca,'XTick',[0.5:4.5],'XTickLabel',{'1','2','3','4','5'});
-            set(gca,'YTick',[0.5:4.5],'YTickLabel',{'1','2','3','4','5'});
+            if (roi~=6 && roi~=24)
+                set(gca,'XTick',[0.5:4.5],'XTickLabel',{'1','2','3','4','5'});
+                set(gca,'YTick',[0.5:4.5],'YTickLabel',{'1','2','3','4','5'});
+            else
+                set(gca,'XTick',[0.5:4.5],'XTickLabel',{'E','I','M','F','J'});
+                set(gca,'YTick',[0.5:4.5],'YTickLabel',{'E','I','M','F','J'});
+            end
         end
-      
+    case 'FIG_digitPSC'                                                     % Plots % signal change for each digit for multiple glms
+        % Plots % signal change for each digit.
+        % Subplots are for each roi.
+        % Outputs the plotting structure for further analysis.
+        sn    = 10:17;
+        roi   = 12;
+        glm   = 3;
+        vararginoptions(varargin,{'sn','roi','glm'});
+        
+        % error handling
+        if length(roi)>1; error('case cannot handle >1 roi'); end
+        
+        P = []; % output structure
+        
+        figure('Color',[1 1 1]);
+        j = 1;
+        for g = glm
+            plt.subplot(1,length(glm),j);
+            p = fivedigitFreq3_imana('FIG_digitPSC_singleROI_singleGLM','sn',sn,'roi',roi,'glm',g,'fig',gca);
+            P = addstruct(P,p);
+            j = j+1;
+        end
+        plt.match('y');
+        varargout = {P};
+    case 'FIG_digitPSC_singleROI_singleGLM'                                 % Plots % signal change for each digit for ONE roi for ONE glm
+        % plots average of betas across voxels from ROI for each finger,
+        % split by trial type
+        sn    = 10:17;
+        roi   = 12;
+        glm   = 3;
+        fig   = [];
+        vararginoptions(varargin,{'sn','roi','fig','glm'});
+        
+        % error handling
+        if length(roi)>1; error('Can only plot PSC from one roi at a time'); end
+
+        P = []; % plotting structure
+        
+        T = load(fullfile(regDir,sprintf('glm%d_reg_Toverall.mat',glm))); % loads structure To from case 'ROI_stats'
+        % Harvest and arrange data to plot
+        T = getrow(T,T.region==roi & ismember(T.SN,sn)); % get rows of stats structure that correspond to desired layer
+        v  = ones(5,1);
+        for i = 1:length(T.SN)
+            p.psc   = T.psc(i,:)';
+            p.digit = [1:5]';
+            p.sn    = v.*T.SN(i);
+            p.roi   = v.*T.region(i);
+            P = addstruct(P,p);
+        end
+        
+        % Plot
+        leg = {};
+        for s = sn; leg{end+1} = subj_name{s}; end
+        if isempty(fig); figure('Color',[1 1 1]); else fig; end % check figure space 
+        % get plotting colours
+        numShades = length(sn);
+        shades    = plt.helper.get_shades(numShades,'gray','decrease',10);
+        sty       = style.custom(shades);
+        plt.line(P.digit,P.psc,'split',P.sn,'subset',logical(P.roi==roi),'style',sty);
+        plt.labels('finger','percent signal change',sprintf('%s glm %d  .',regname{roi},glm));
+        plt.legend('northeast',leg);
+        drawline(0,'dir','horz');
+        % output to user
+        varargout = {P};
+    case 'FIG_multipleRoiRDMs'
+        % plots rescaled distances for each freq for specified rois, avg.
+        % across subjects.
+        % rescales each subject's RDM by the max distance, so 
+        clrlim = {[0 0.04],[0 0.03],[0 0.05]};
+        freq = {'0.3Hz','0.6Hz','1.3Hz','2.6Hz'};
+        sn = [10:17];
+        roi = [11,12,24];
+        %roi = 12;
+        reg_titles = {'S1','M1','V1/V2'};
+        %reg_titles = {'M1'};
+        jj = 1; % subplot ticker
+        figure('Color',[1 1 1]);
+        for rr = 1:length(roi);
+            r = roi(rr);
+            % plot rdms for each freq.- one row=one roi
+            for spd = 1:4
+                subplot(length(roi),5,jj)
+                %fivedigitFreq3_imana('FIG_singleRDM','sn',sn,'glm',3,'layer',1,'roi',r,'speed',spd,'fig',gca,'clrlim',clrlim{rr});
+                fivedigitFreq3_imana('FIG_singleRDM','sn',sn,'glm',3,'layer',1,'roi',r,'speed',spd,'fig',gca);
+                % add title
+                if spd~=1
+                   title(sprintf('%s',freq{spd}));
+                else
+                    title(sprintf('%s %s',reg_titles{rr},freq{spd}));
+                end
+                % update suplot counter
+                jj = jj+1; 
+            end
+            jj = jj+1; 
+        end
+        
     case '0' % ------------ Cases in dev, depreciated, or not pertinant to main analyses
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -      
     case 'FIG_rdm_reliability_btSubj'
@@ -3925,9 +5100,12 @@ switch(what)
     case 'STATS_ResponseProperties' 
         glm = 3;
         sn  = [10:17];
-        roi = [11,12];
+        roi = [11,12,6,24];
         %speeds = [1:4]; % include selection of speeds
         vararginoptions(varargin,{'sn','glm','roi','speeds'});
+        
+        % digit contrast
+        C = rsa.util.pairMatrix(5);
         
         % load region data (T)
         T = load(fullfile(regDir,sprintf('glm%d_reg_betas.mat',glm))); 
@@ -3958,7 +5136,7 @@ switch(what)
                             case 1 % Univariate (projections)
                                 % project patterns on mean pattern line
                                 betas = calcUnivariateProjections(betaUW,D.run);
-                            case 2 % Multivariate (deviations from projections)'
+                            case 2 % Multivariate (deviations from projections)
                                 betas = betaUW - betas; % note betas here are the univariate mean pattern projections
                             case 3 % Uni + Multi (untouched betas)
                                 betas = betaUW;
@@ -3967,9 +5145,12 @@ switch(what)
                         So.numvox       = size(beta,2);
                         So.mm_area      = So.numvox*voxSize;
                         G               = pcm_estGCrossval(betas,D.run,D.tt);
+                        Gpd             = pcm_makePD(G);
                         So.G            = rsa_vectorizeIPM(G);
+                        So.Gpd          = rsa_vectorizeIPM(Gpd);
                         So.dist_nocv    = distance_euclidean(betas',D.tt)';
                         So.dist_nocv_mm = (So.dist_nocv.*So.numvox)./So.mm_area;
+                        So.ldc_pd       = sum((C*Gpd).*C,2)';
                         So.ldc          = rsa.distanceLDC(betas,D.run,D.tt);    % info/voxel
                         So.ldc_mm       = (So.ldc.*So.numvox)./So.mm_area; % info/mm^3
                         % indexing fields
@@ -4001,7 +5182,7 @@ switch(what)
         W = [];
         for j = 1:length(UM.type)
             vv.dist_nocv    = UM.dist_nocv(j,:)';
-            vv.ldc          = UM.ldc(j,:)';
+            vv.ldc          = UM.ldc_pd(j,:)';
             vv.dist_nocv_mm = UM.dist_nocv_mm(j,:)';
             vv.ldc_mm       = UM.ldc_mm(j,:)';
             vv.type         = w.*UM.type(j);
@@ -4015,17 +5196,59 @@ switch(what)
         % avg. dists within subjects
         W = tapply(W,{'sn','roi','type','exp','species','numPress'},{'ldc','mean'},{'ldc_mm','mean'},{'dist_nocv','mean'},{'dist_nocv_mm','mean'});
         % calc dist ratio
-        w1 = getrow(W,W.type==1);
-        w2 = getrow(W,W.type==2);
-        Wr.ratio    = w1.ldc./w2.ldc;
-        Wr.ratio_mm = w1.ldc_mm./w2.ldc_mm;
-        Wr.sn       = w1.sn;
-        Wr.roi      = w1.roi;
-        Wr.exp      = ones(size(w1.sn)).*4; % experiment 4
-        Wr.species  = ones(size(w1.sn)).*1; % human
-        Wr.numPress = w1.numPress;
+        Wr = [];
+        for r = roi
+            for f = [2,4,8,16]
+                w1 = getrow(W,W.type==1 & W.roi==r & W.numPress==f);    % Univariate distance (differences along univariate projection)
+                w2 = getrow(W,W.type==2 & W.roi==r & W.numPress==f);    % Multivariate distance (deviations from univariate projections)
+                w3 = getrow(W,W.type==3 & W.roi==r & W.numPress==f);    % Overall distance (untouched betas)
+                %wr.ratio    = w2.ldc./w3.ldc;           % multivariate-to-total distances
+                wr.ratio_uni= w1.ldc./w3.ldc;
+                wr.ratio_mm = w2.ldc_mm./w3.ldc_mm; 
+                wr.ratio_uniAvg = w1.ldc./mean(w3.ldc);
+                wr.ratio_mmAvg  = w2.ldc./mean(w3.ldc);
+                wr.sn       = w2.sn;
+                wr.roi      = w2.roi;
+                wr.exp      = ones(size(w2.sn)).*4; % experiment 4
+                wr.species  = ones(size(w2.sn)).*1; % human
+                wr.numPress = w2.numPress;
+                Wr = addstruct(Wr,wr);
+            end
+        end
         varargout = {W,Wr};
-    
+    case 'FIG_mltDistRatio'
+        roi = [11,12,6,24]; % s1, m1, v1/v2 (both hemis)
+        sn  = 10:17;
+        glm = 3;
+        
+        [~,Wr] = fivedigitFreq3_imana('HARVEST_ResponseProperties','roi',roi,'sn',sn,'glm',glm);
+        Wr.freq = Wr.numPress./6;
+        % first, avg. ratios for v1/v2 across hemispheres
+        Wr.roi(Wr.roi==6)=24;
+        Wr = tapply(Wr,{'sn','roi','freq','numPress'},{'ratio_mmAvg','nanmean'},{'ratio_uniAvg','nanmean'});
+        % exclude plotting data for two lowest frequencies in visual
+        % cortices
+        % why? Because some avg. univariate distances (on the components) are
+        % negative, which causes the overall distance to be less than the
+        % multivariate (b/c total has multi - uni, in this case, instead of
+        % multi + uni)
+        Wr.subset = true(size(Wr.roi));
+        %Wr.subset((Wr.roi==24 & Wr.numPress==2)|(Wr.roi==24 & Wr.numPress==4)) = false;
+        % plot all freqs for all rois
+        %shades = plt.defaults.colours({'black','medred','medgreen'});
+        %sty    = style.custom(shades);
+        style.use('3black');
+        figure('Color',[1 1 1]);
+        plt.line(log(Wr.numPress),Wr.ratio_mmAvg,'split',Wr.roi,'subset',Wr.subset,'errorfcn','');
+        ylim([0 1]); % V1/V2 ratios may be weird for first two freqs, since very noisy
+        plt.labels('stimulation freq. (Hz)','multi/total ldc');
+        plt.set('xticklabel',{'0.3','0.6','1.3','2.6'},'xticklabelrotation',45);
+        plt.legend('southwest',{'S1','M1','V1/V2'});
+        drawline(0.5,'dir','horz','linestyle',':','linewidth',1.5);
+        %text(1.75,0.35,(['\downarrow ', sprintf('greater \n univariate \n distance')]));
+        %keyboard
+        varargout={Wr};
+        
     case 'STATS_patternVarRatio'  
         glm = 3;
         sn  = [10:17];
@@ -4127,6 +5350,55 @@ switch(what)
             Wr = addstruct(Wr,w);
         end
         varargout = {Wr};
+      
+    case 'STATS_spatialCorrelation'
+        % correlates activity patterns of each finger across speeds.
+        % if RDM is stable, are spatial patterns also stable?
+        glm = 3;
+        roi = 12; % default primary motor cortex
+        sn  = 10:17;
+        Do  = []; % output structure
+        v   = ones(12,1);
+        % load region data
+        T  = load(fullfile(regDir,sprintf('glm%d_reg_betas.mat',glm)));      
+        T  = getrow(T,T.region==roi);
+        
+        for s = sn % for each subject
+            D     = load(fullfile(glmDir{glm}, subj_name{s}, 'SPM_info.mat')); % load subject's trial structure
+            t     = getrow(T,T.SN==s & T.region==roi);
+            betas = bsxfun(@rdivide,t.beta{1}(1:length(D.run),:),sqrt(t.resMS{1})); % univariate whitened betas
+            % - remove run mean
+%             C0 = indicatorMatrix('identity',D.run); % run-mean centring matrix
+%             betas = betas-C0*pinv(C0)*betas;
+            % - make datastructure 
+            t = [];
+            t.betas = betas;
+            t.run   = D.run;
+            t.speed = D.speed;
+            t.digit = D.digit;
+            % - split patterns into even and odd runs, avg. patterns within
+            % splits
+            t.even = mod(t.run,2);
+            tEven  = tapply(t,{'speed','digit'},{'betas','mean'},'subset',t.even==1);
+            tOdd   = tapply(t,{'speed','digit'},{'betas','mean'},'subset',t.even==0);
+            % - correlate patterns
+            R = corr(tEven.betas',tOdd.betas');
+            diffSpeed = bsxfun(@(x,y) x~=y,tEven.speed,tOdd.speed');
+            % - get correlations across speeds for each digit
+            for d = 1:5
+                sameDigit = bsxfun(@(x,y) x==y & x==d,tEven.digit,tOdd.digit');               
+                Di.corr   = R(sameDigit & diffSpeed);
+                Di.digit  = v.*d;
+                Di.sn     = v.*s;
+                Di.roi    = v.*roi;
+                Do = addstruct(Do,Di);
+            end
+        end
+        varargout = {Do};
+    case 'PLOT_spatialCorrelation'
+        D = fivedigitFreq3_imana('STATS_spatialCorrelation');
+        D = tapply(D,{'sn','digit','roi'},{'corr','mean'});
+        plt.dot(D.digit,D.corr)
         
     case '0' % These cases toyed around w/ the idea of regressing out the scaling effect from the raw activity to estimate "true" finger patterns (remove this BOLD effect)
     case 'ROI_TruePatterns'
