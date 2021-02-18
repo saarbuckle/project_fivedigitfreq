@@ -1189,6 +1189,10 @@ switch(what)
         % 17 to 21:  thumb to little for 4 presses vs. rest
         % 22 to 26:  thumb to little for 8 presses vs. rest
         % 27 to 31:  thumb to little for 16 presses vs.rest
+        % 32 to 36:  avg. of all thumbs, avg. of index, etc. presses (avg.
+        % across speeds)
+        sn=10:17;
+        glm=3;
         vararginoptions(varargin,{'sn','glm'});
         
         for s = sn
@@ -1235,6 +1239,16 @@ switch(what)
                         ind=ind+1;
                     end
                 end
+                
+                %_____t avg. single finger contrast (avg. across speeds per finger)
+                for d=1:5
+                    con=zeros(1,size(SPM.xX.X,2));
+                    con(:,T.digit==d)=1;
+                    con=con/sum(con);
+                    SPM.xCon(ind)=spm_FcUtil('Set',sprintf('D%d_spd%d',d,sp), 'T', 'c',con',SPM.xX.xKXs);
+                    ind=ind+1;
+                end
+                
                 
                 %____do the constrasts
                 SPM=spm_contrasts(SPM,[1:length(SPM.xCon)]);
@@ -1743,24 +1757,26 @@ switch(what)
         %__________________________________________________________________
     case 'ROI_timeseries_plot'                                              % STEP 4.3(optional): plots timeseries for specified region by pressing speed (enter sn, region, glm #)
         glm = 3;
-        sn  = 2;
+        sn  = 10;
         roi = 12;
         vararginoptions(varargin,{'sn','glm','roi'});
         
         figure('Name',sprintf('%s Timeseries from %s',reg_title{roi},sprintf('glm%d',glm)),'NumberTitle','off')
-        D   = load(fullfile(regDir,sprintf('glm%d_reg_timeseries',glm)));
+        D   = load(fullfile(regDir,sprintf('glm%dreg_timeseries',glm)));
         
         for s = sn
             T = getrow(D,D.SN==s);
             T = getrow(T,T.region==roi);
+            T.pressFreq = ceil(T.event/5);
+            T=getrow(T,T.pressFreq>1);
             %             traceplot([-4:20],T.y_raw,'errorfcn','stderr','split',ceil(T.event/5));
             %             legend({'2 presses','','4 presses','','8 presses','','16 presses',''});
             
             subplot(length(sn),1,find(sn==s))
             traceplot([-4:20],T.y_adj,'errorfcn','stderr','split',ceil(T.event/5));
-            legend({'2 presses','','4 presses','','8 presses','','16 presses',''});
+            legend({'4 presses','','8 presses','','16 presses'});
             hold on;
-            traceplot([-4:20],T.y_hat,'linestyle',':','split',ceil(T.event/5));
+            traceplot([-4:20],T.y_hat,'linestyle',':','split',ceil(T.event/5),'linewidth',2);
             hold off;
             xlabel('TR');
             ylabel('activation');
@@ -2227,9 +2243,11 @@ switch(what)
         hemisphere = [1];   % both left (1) and right (2) hemis 
         
         % take contrast of each finger and press combo vs. rest
-        for c = 1:20
-            fileList{c} = sprintf('spmT_00%d.nii',c+11); % see case 'GLM_contrast' for contrast number index
+        j=1;
+        for c = 32:36
+            fileList{j} = sprintf('spmT_00%d.nii',c); % see case 'GLM_contrast' for contrast number index
             % contrast numbers 12:31
+            j=j+1;
         end
         for s = sn
             for h = hemisphere
@@ -2246,8 +2264,8 @@ switch(what)
                     images{f} = fullfile(glmDir{glm},subj_name{s},fileList{f});
                 end;
                 
-                M = caret_vol2surf_own(C1.data,C2.data,images,'topo',topo,'exclude_thres',0.75,'ignore_zeros',1);
-                caret_save(fullfile(caretSDir,sprintf('s%02d_glm%d_hemi%d_finger.metric',s,glm,h)),M);
+                M = caret_vol2surf_own(C1.data,C2.data,images,'topo',topo,'exclude_thres',0.75,'ignore_zeros',1,'column_names',{'D1','D2','D3','D4','D5'});
+                caret_save(fullfile(caretSDir,sprintf('s%02d_glm%d_hemi%d_singleFinger.metric',s,glm,h)),M);
             end;
         end;
     case 'surf_fingerpatternsM1S1'                                          % Make finger pattern jpegs
@@ -2398,6 +2416,74 @@ switch(what)
         %keyboard
         %saveas(gcf, [subj_name{sn},'_',hemName{h},'_',sprintf('%d',mm)], 'jpg')
     
+    case 'surf_fingermapCollection'                                                  % Map locations of finger patterns- run after glm estimation
+        % map volume images to metric file and save them in individual
+        % surface folder for fingermapCollection
+        sn  = 10:17;
+        glm = 3;
+        vararginoptions(varargin,{'sn','glm'});
+        
+        hemisphere = [1];   % left (1) hemi 
+        
+        % take contrast of each finger and press combo vs. rest
+        j=1;
+        for c = 32:36 % finger contrast, avg.  across pressing speeds
+            fileList{j} = sprintf('spmT_00%d.nii',c); % see case 'GLM_contrast' for contrast number index
+            j=j+1;
+        end
+        for s = sn
+            for h = hemisphere
+                % first map caret files:
+                caretSDir = fullfile(caretDir,[atlasA,subj_name{s}],hemName{h});
+                white     = fullfile(caretSDir,[hem{h} '.WHITE.coord']);
+                pial      = fullfile(caretSDir,[hem{h} '.PIAL.coord']);
+                topo      = fullfile(caretSDir,[hem{h} '.CLOSED.topo']);
+                
+                C1 = caret_load(white);
+                C2 = caret_load(pial);
+                
+                for f = 1:length(fileList)
+                    images{f} = fullfile(glmDir{glm},subj_name{s},fileList{f});
+                end;
+                
+                [M,vox2Node] = surf_vol2surf(C1.data,C2.data,images,'topo',topo,'exclude_thres',0.75,'ignore_zeros',1,'column_names',{'D1','D2','D3','D4','D5'});
+                caret_save(fullfile(caretSDir,sprintf('s%02d_glm%d_hemi%d_singleFinger.metric',s,glm,h)),M);
+                save(fullfile(caretSDir,sprintf('s%02d_glm%d_hemi%d_finger_vox2Node.mat',s,glm,h)),'vox2Node');
+                
+                % now do same maps in workbench format (gifti):
+            end;
+        end;
+    case 'surf_fingermapCollectionOLD'                                          % Make finger pattern jpegs
+        sn = 10;
+        glm = 3;
+        vararginoptions(varargin,{'sn','glm'});
+        
+        h=1; % contrlateral (left) hemi
+        groupDir=[gpCaretDir filesep hemName{h} ];
+        cd(groupDir);
+        switch(h)
+            case 1
+                coord='lh.FLAT.coord';
+                topo='lh.CUT.topo';
+                data='lh.surface_shape';
+                xlims=[-32 35];
+                ylims=[-20 25];
+        end
+
+        M=fullfile(caretDir,['x' subj_name{sn}],hemName{h},sprintf('s%02d_glm%d_hemi%d_finger.metric',sn,glm,h));
+        % data finger pattern data
+        d=[];
+        for i=1:5
+            [~,d(:,i)]=caret_plotflatmap('col',i,'data',M,'topo',topo,'coord',coord,'xlims',xlims,'ylims',ylims); 
+        end
+        
+        % make into functional surface gifti
+        anatStruct = {'CortexLeft','CortexRight'};
+        hemiLetter = {'L','R'};
+        G=surf_makeFuncGifti(d,'anatomicalStruct',anatStruct{h},'columnNames',{'D1','D2','D3','D4','D5'}); 
+        save(G,sprintf('/Users/sarbuckle/Desktop/Fingermaps/fdf3.%s.%s.func.gii',subj_name{sn},hemiLetter{h}));
+        fprintf('fdf3.%s.%s...done.\n',subj_name{sn},hemiLetter{h});
+        
     case '0' % Make first-pass versions of paper figures.
     case 'depreciated_Fig2'   
        % create two panel figure of pattern scaling for paper. Exact
